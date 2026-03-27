@@ -4,10 +4,18 @@
 import './App.css'
 import banner from "./components/gambling-banner.jpg";
 import Button from './button';
+import Post from './betPost';
+
 
 export default function App() {
+
+  var backgroundColor = "#DA291C"
+  var textcolor = "white"
+  var fontSize = 18
+  
   return (
     <div>
+
 
     <div className="banner">
       <img 
@@ -20,9 +28,9 @@ export default function App() {
       
     <div className="button-area">
       <Button
-        backgroundColor="#DA291C"
-        textColor="white"
-        fontSize={18}
+        backgroundColor= {backgroundColor}
+        textColor= {textcolor}
+        fontSize={fontSize}
         pillShape
       >
         Create Bet
@@ -30,6 +38,19 @@ export default function App() {
     </div>
 
       <p> Tuition doesn't gamble away itself Grinnellians do har har</p>
+
+    <div>
+      <Post
+        backgroundColor={backgroundColor}
+        textColor= {textcolor}
+        fontSize={fontSize}
+        pillShape
+        title="Random Bet"
+        content="This is a simple bet."
+      />
+    </div>
+    
+
     </div>
   );
 }

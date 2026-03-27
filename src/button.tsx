@@ -4,6 +4,8 @@ type ButtonProps = {
     fontSize: number;
     pillShape?: boolean;
     children: React.ReactNode;
+    // hoverColor?: string;
+    onClick?: () => void;
 };
 
 export default function Button({
@@ -12,9 +14,13 @@ export default function Button({
     fontSize,
     pillShape,
     children,
+    // hoverColor,
+    onClick,
 }: ButtonProps) {
     return (
-        <button style={{
+        <button 
+            onClick={onClick}
+            style={{
             backgroundColor: backgroundColor,
             color: textColor,
             fontSize: fontSize,
