@@ -9,6 +9,8 @@ type postProps = {
     title: string;
     content: string;
     betBarColor?: string;
+    leftLabel: string;
+    rightLabel: string;
     // children?: React.ReactNode;
 };
 
@@ -20,9 +22,16 @@ pillShape,
 title,
 content,
 betBarColor,
+leftLabel,
+rightLabel,
 }: postProps) {
   const [votes, setVotes] = useState(0);
   const [showComments, setShowComments] = useState(false);
+
+
+  //math for bar
+  const percentage = Math.max(0, Math.min(100, votes));
+  const noPercentage =  100 - percentage;
 
   const styles = {
     card: {
@@ -45,13 +54,28 @@ betBarColor,
       padding: "10px",
       background: backgroundColor,
     },
-    innerBox: {
-      border: "1px solid #999",
-      padding: "10px",
-      marginTop: "10px",
+    // innerBox: {
+    //   border: "1px solid #999",
+    //   padding: "10px",
+    //   marginTop: "10px",
+    //   borderRadius: "6px",
+    //   backgroundColor: betBarColor || "#000000",
+    //   color: textColor || "#000",
+    // },
+    barContainer: {
+      width: "100%",
+      height: "20px",
+      display: "flex",
+      backgroundColor: "#ddd",
       borderRadius: "6px",
-      backgroundColor: betBarColor || "#000000",
-      color: textColor || "#000",
+      overflow: "hidden",
+      marginTop: "10px",
+    },
+    
+    barFill: {
+      height: "100%",
+      backgroundColor: betBarColor || "#4caf50",
+      transition: "width 0.3s ease",
     },
   };
 
@@ -59,16 +83,59 @@ betBarColor,
     <div style={styles.card}>
       <h3>{title}</h3>
       <p>{content}</p>
-
-
-      <div style={styles.actions}>
-
     
+
+
+
+        {/* this style here shows percentage on both sides */}
+      <div style={{ marginTop: "8px", display: "flex", justifyContent: "space-between" }}>
+        <span>{leftLabel}: {percentage}%</span>
+        <span>{rightLabel}: {noPercentage}%</span>
+      </div>
+
+
+      <div style={styles.barContainer}>
+        {/* LEFT (YES) */}
+        <div
+          style={{
+            ...styles.barFill,
+            width: `${percentage}%`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: betBarColor || "#4caf50",
+          }}
+        >
+          {percentage > 5 ? `${percentage}%` : ""}
+        </div>
+
+        {/* RIGHT (NO) */}
+        <div
+          style={{
+            height: "100%",
+            width: `${noPercentage}%`,
+            backgroundColor: "#00DBD7",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            paddingLeft: noPercentage < 5 ? "0px" : "6px",           
+            color: "#000",
+            transition: "width 0.3s ease",
+          }}
+        >
+          {noPercentage > 5 ? `${noPercentage}%` : ""}
+        </div>
+      </div>
+
+
+        <div style={styles.actions}>
+
+
         <Button //Upvote
           backgroundColor = {backgroundColor}  
           textColor= {textColor}
           fontSize={fontSize}
-          onClick={() => setVotes(votes + 1)}
+          onClick={() => setVotes(votes + 5)}
         >
           ⬆️
         </Button>
@@ -78,7 +145,7 @@ betBarColor,
           backgroundColor = {backgroundColor} 
           textColor= {textColor}
           fontSize={fontSize}
-          onClick={() => setVotes(votes - 1)}
+          onClick={() => setVotes(votes - 5)}
         >
           ⬇️
         </Button>

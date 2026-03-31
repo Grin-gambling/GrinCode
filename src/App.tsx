@@ -47,6 +47,8 @@ export default function App() {
         pillShape
         title="Random Bet"
         content="This is a simple bet."
+        leftLabel='team1'
+        rightLabel='team2'
       />
     </div>
     
