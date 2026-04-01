@@ -46,7 +46,7 @@ export default function App() {
         fontSize={fontSize}
         pillShape
         title="Random Bet"
-        content="This is a simple bet."
+        content="chances that team1 beats team2"
         leftLabel='team1'
         rightLabel='team2'
       />

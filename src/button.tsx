@@ -4,6 +4,9 @@ type ButtonProps = {
     fontSize: number;
     pillShape?: boolean;
     children: React.ReactNode;
+    width?: string;
+    topMargin?: string;
+    
     // hoverColor?: string;
     onClick?: () => void;
 };
@@ -14,6 +17,8 @@ export default function Button({
     fontSize,
     pillShape,
     children,
+    width = "auto",
+    topMargin,
     // hoverColor,
     onClick,
 }: ButtonProps) {
@@ -21,7 +26,9 @@ export default function Button({
         <button 
             onClick={onClick}
             style={{
+            marginTop: topMargin,  //remember to use px
             backgroundColor: backgroundColor,
+            width,
             color: textColor,
             fontSize: fontSize,
             fontFamily: "Futura, sans-serif",
