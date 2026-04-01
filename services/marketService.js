@@ -3,7 +3,7 @@ const marketModel = require('../models/marketModel');
 const outcomeModel = require('../models/outcomeModel');
 
 /**
- * Create a market with outcomes using user input yay
+ * Create a market with outcomes using user input mega-yay
  * @param {string} question
  * @param {string} outcome1
  * @param {string} outcome2
