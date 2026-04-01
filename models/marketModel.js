@@ -4,7 +4,7 @@ const db = require('../db/db');
 // The rest of it is just details of that market, and what we return I guess
 
 
-// Create a new market
+// Create a new market 
 async function createMarket(question, description, client = db) {
   const query = `
     INSERT INTO markets (question, description)
