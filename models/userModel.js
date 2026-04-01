@@ -5,7 +5,7 @@ const db = require('../db/db');
 
 
 // Create a new user
-async function createUser(username, email, passwordHash) {
+async function createUser(username, email, passwordHash, client = db) {
   const query = `
     INSERT INTO users (username, email, password_hash)
     VALUES ($1, $2, $3)
@@ -13,9 +13,7 @@ async function createUser(username, email, passwordHash) {
   `;
   // in this case SQL is creating a new item in TABLE users
 
-  const values = [username, email, passwordHash];
-  const result = await db.query(query, values);
-
+  const result = await client.query(query, [username, email, passwordHash]);
   return result.rows[0];
 }
 

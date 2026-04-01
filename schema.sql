@@ -11,7 +11,7 @@ CREATE TABLE users (
   username TEXT UNIQUE NOT NULL, -- username
   email TEXT UNIQUE NOT NULL, -- email
   password_hash TEXT NOT NULL, -- password
-  balance NUMERIC(12,2) DEFAULT 0 CHECK (balance >= 0), -- points currently
+  balance NUMERIC(12,0) DEFAULT 1000 CHECK (balance >= 0), -- points currently
   created_at TIMESTAMP DEFAULT NOW() -- time created
 );
 
@@ -19,9 +19,11 @@ CREATE TABLE users (
 -- MARKETS (important info is the question)
 CREATE TABLE markets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- ID
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE, -- who made it
   question TEXT NOT NULL, -- title
-  market_type TEXT NOT NULL CHECK (market_type IN ('binary', 'multiple_choice')), -- type of bet
-  status TEXT NOT NULL CHECK (status IN ('open', 'closed', 'resolved')), -- open closed resolved
+  description TEXT NOT NULL, -- elaboration of what the market it
+  market_type TEXT NOT NULL DEFAULT 'binary' CHECK (market_type IN ('binary', 'multiple_choice')), -- type of bet
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed', 'resolved')), -- open closed resolved
   created_at TIMESTAMP DEFAULT NOW() -- time created
 );
 
@@ -31,7 +33,7 @@ CREATE TABLE outcomes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- ID
   market_id UUID REFERENCES markets(id) ON DELETE CASCADE, -- what market it's part of
   label TEXT NOT NULL, -- what the bet is for
-  odds NUMERIC(6,3) NOT NULL CHECK (odds > 1), -- odds
+  odds NUMERIC(6,3) NOT NULL DEFAULT '50' CHECK (odds > 1), -- odds (will edit the scale of odds later)
   is_winner BOOLEAN DEFAULT FALSE -- did this win yet
 );
 
