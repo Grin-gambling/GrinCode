@@ -12,6 +12,11 @@ type postProps = {
     betBarColor?: string;
     leftLabel: string;
     rightLabel: string;
+  timerStarted: boolean;
+  setTimerStarted: React.Dispatch<React.SetStateAction<boolean>>;
+  timeLeft: number;
+  setTimeLeft: React.Dispatch<React.SetStateAction<number>>;
+    
     // children?: React.ReactNode;
 };
 
@@ -31,24 +36,32 @@ content,
 betBarColor,
 leftLabel,
 rightLabel,
+timerStarted,
+// setTimerStarted,
+timeLeft,
+setTimeLeft
+
 }: postProps) {
   const [votes, setVotes] = useState(0);
 
   const [bets, setBets] = useState<Bet[]>([]);
-  
+
+  // const [timeLeft, setTimeLeft] = useState(10);
   
   const [showComments, setShowComments] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [showPopup, setShowPopup] = useState(false);
+  const [hasEnded, setHasEnded] = useState(false);
 
 
   const [showModal, setShowModal] = useState(false);
   const [selectedSide, setSelectedSide] = useState<"yes" | "no" | null>(null);
   const [wagerAmount, setWagerAmount] = useState<number | "">("");
 
-  //math for bar
-  // const percentage = Math.max(0, Math.min(100, votes));
-  // const noPercentage =  100 - percentage;
+  // const [timerStarted, setTimerStarted] = useState(false);
+
 
   //highlights text when pop-up to place bet is opened
   useEffect(() => {
@@ -57,6 +70,25 @@ rightLabel,
       inputRef.current.select(); // highlights number
     }
   }, [showModal, selectedSide]);
+
+
+  useEffect(() => {
+    if (!timerStarted) return;
+    if (timeLeft <= 0) {
+      if (!hasEnded) {
+        setShowPopup(true);
+        setHasEnded(true);
+      }
+      return;
+    }
+  
+    const interval = setInterval(() => {
+      setTimeLeft((t) => t - 1);
+    }, 1000);
+  
+    return () => clearInterval(interval);
+  }, [timerStarted, timeLeft, hasEnded]);
+
 
   const selectedLabel =
   selectedSide === "yes"
@@ -115,6 +147,7 @@ rightLabel,
       borderRadius: "6px",
       overflow: "hidden",
       marginTop: "10px",
+      // position: "relative",
     },
     
     barFill: {
@@ -126,7 +159,20 @@ rightLabel,
 
   return (
     <div style={styles.card}>
-      <h3>{title}</h3>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h3 style={{ margin: 0 }}>{title}</h3>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontFamily: "Futura", fontSize: "14px", fontWeight: "bold" }}>
+            Time left in bet:  {timeLeft > 0 ? `${timeLeft}s` : "Over"}
+          </div>
+
+        </div>
+
+
+      </div>
+
       <p>{content}</p>
 
     
@@ -138,7 +184,7 @@ rightLabel,
       </div>
 
 
-      <div style={styles.barContainer}>
+      <div style={styles.barContainer as React.CSSProperties}>
         {/* LEFT (YES) */}
         <div
           onClick={() => {
@@ -235,6 +281,7 @@ rightLabel,
           <p>💬 Comment 2</p>
         </div>
       )}
+
 
 {showModal && (
 
@@ -353,9 +400,44 @@ rightLabel,
 
           </div>
 
+          
+
     </div>
 
 )}
+
+
+
+{showPopup && (//Shows popup when timer elapses
+  <div
+    onClick={() => setShowPopup(false)}
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      backgroundColor: "rgba(0,0,0,0.5)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        background: "#00001A",
+        padding: "20px",
+        borderRadius: "10px",
+        color: "white",
+      }}
+    >
+      ⏰ Time is up — betting is now closed!
+    </div>
+  </div>
+)}
+
+
 
 
     </div>
