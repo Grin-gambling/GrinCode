@@ -4,7 +4,7 @@ const outcomeModel = require('../models/outcomeModel');
 
 /**
  * Create a market with outcomes using user input
- * USE TO CONNECT TO FRONTEND
+ * USE TO CONNECT TO FRONTEND 
  * @param {string} question
  * @param {string} outcome1
  * @param {string} outcome2
