@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRef, useEffect } from "react";
 import Button from "./button"
 
 type postProps = {
@@ -14,6 +15,12 @@ type postProps = {
     // children?: React.ReactNode;
 };
 
+type Bet = {
+  side: "yes" | "no";
+  amount: number;
+};
+
+
 export default function Post({ 
 backgroundColor,
 textColor,
@@ -26,12 +33,50 @@ leftLabel,
 rightLabel,
 }: postProps) {
   const [votes, setVotes] = useState(0);
+
+  const [bets, setBets] = useState<Bet[]>([]);
+  
+  
   const [showComments, setShowComments] = useState(false);
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
+
+  const [showModal, setShowModal] = useState(false);
+  const [selectedSide, setSelectedSide] = useState<"yes" | "no" | null>(null);
+  const [wagerAmount, setWagerAmount] = useState<number | "">("");
 
   //math for bar
-  const percentage = Math.max(0, Math.min(100, votes));
-  const noPercentage =  100 - percentage;
+  // const percentage = Math.max(0, Math.min(100, votes));
+  // const noPercentage =  100 - percentage;
+
+  //highlights text when pop-up to place bet is opened
+  useEffect(() => {
+    if (showModal && selectedSide && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select(); // highlights number
+    }
+  }, [showModal, selectedSide]);
+
+  const selectedLabel =
+  selectedSide === "yes"
+    ? leftLabel
+    : selectedSide === "no"
+    ? rightLabel
+    : "";
+
+  const yesTotal = bets
+    .filter((bet) => bet.side === "yes")
+    .reduce((sum, bet) => sum + bet.amount, 0);
+
+  const noTotal = bets
+    .filter((bet) => bet.side === "no")
+    .reduce((sum, bet) => sum + bet.amount, 0);
+
+  const total = yesTotal + noTotal;
+  const yesPercent = total === 0 ? 50 : (yesTotal / total) * 100;
+  const noPercent = total === 0 ? 50 : (noTotal / total) * 100;
+
 
   const styles = {
     card: {
@@ -83,47 +128,57 @@ rightLabel,
     <div style={styles.card}>
       <h3>{title}</h3>
       <p>{content}</p>
+
     
-
-
 
         {/* this style here shows percentage on both sides */}
       <div style={{ marginTop: "8px", display: "flex", justifyContent: "space-between" }}>
-        <span>{leftLabel}: {percentage}%</span>
-        <span>{rightLabel}: {noPercentage}%</span>
+        <span>{leftLabel}: {yesPercent.toFixed(1)}%</span>
+        <span>{rightLabel}: {noPercent.toFixed(1)}%</span>
       </div>
 
 
       <div style={styles.barContainer}>
         {/* LEFT (YES) */}
         <div
+          onClick={() => {
+            setSelectedSide("yes");
+            setShowModal(true);
+          }}
           style={{
             ...styles.barFill,
-            width: `${percentage}%`,
+            width: `${yesPercent}%`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: betBarColor || "#4caf50",
+            cursor: "pointer",
           }}
+          
         >
-          {percentage > 5 ? `${percentage}%` : ""}
+          {yesPercent > 5 ? `${yesPercent.toFixed(1)}%` : ""}
         </div>
 
         {/* RIGHT (NO) */}
         <div
+          onClick={() => {
+            setSelectedSide("yes");
+            setShowModal(true);
+          }}
           style={{
             height: "100%",
-            width: `${noPercentage}%`,
+            width: `${noPercent}%`,
             backgroundColor: "#00DBD7",
             display: "flex",
             alignItems: "center",
             justifyContent: "flex-start",
-            paddingLeft: noPercentage < 5 ? "0px" : "6px",           
+            paddingLeft: noPercent < 5 ? "0px" : "6px",           
             color: "#000",
             transition: "width 0.3s ease",
+            cursor: "pointer",
           }}
         >
-          {noPercentage > 5 ? `${noPercentage}%` : ""}
+          {noPercent > 5 ? `${noPercent.toFixed(1)}%` : ""}
         </div>
       </div>
 
@@ -180,6 +235,129 @@ rightLabel,
           <p>💬 Comment 2</p>
         </div>
       )}
+
+{showModal && (
+
+  <div
+  
+    onClick={() => setShowModal(false)}
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      backgroundColor: "rgba(0,0,0,0.5)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    
+    <div
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        background: "#00001A",
+        padding: "20px",
+        borderRadius: "10px",
+        width: "300px",
+      }}
+    >
+
+
+<div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+  
+  {/* LEFT OPTION */}
+  <div
+    onClick={() => setSelectedSide("yes")}
+    style={{
+      flex: 1,
+      padding: "10px",
+      textAlign: "center",
+      borderRadius: "6px",
+      cursor: "pointer",
+      border: selectedSide === "yes" ? "2px solid #4caf50" : "1px solid #ccc",
+      backgroundColor: selectedSide === "yes" ? "#e8f5e9" : "#fff",
+      fontWeight: selectedSide === "yes" ? "bold" : "normal",
+      color: selectedSide === "yes" ? "#000000" : "#000",
+    }}
+  >
+    {leftLabel}
+  </div>
+
+  {/* RIGHT OPTION */}
+  <div
+    onClick={() => setSelectedSide("no")}
+    style={{
+      flex: 1,
+      padding: "10px",
+      textAlign: "center",
+      borderRadius: "6px",
+      cursor: "pointer",
+      border: selectedSide === "no" ? "2px solid #00DBD7" : "1px solid #ccc",
+      backgroundColor: selectedSide === "no" ? "#e0f7fa" : "#fff",
+      fontWeight: selectedSide === "no" ? "bold" : "normal",
+      color: selectedSide === "yes" ? "#000000" : "#000",
+    }}
+  >
+    {rightLabel}
+  </div>
+
+</div>
+
+{selectedSide && (
+  <input
+  ref={inputRef}
+  type="number"
+  placeholder={`Enter amount for ${selectedLabel}`}
+  value={wagerAmount}
+  onChange={(e) => {
+    const value = e.target.value;
+    setWagerAmount(value === "" ? "" : Number(value));
+  }}
+  style={{
+    width: "100%",
+    marginTop: "15px",
+    padding: "5px",
+  }}
+/>
+)}
+
+            <Button
+              backgroundColor={backgroundColor}
+              topMargin="15px"
+              textColor={textColor}
+              fontSize={fontSize}
+              pillShape
+              width="200px"
+              onClick={() => {
+                if (!selectedSide || wagerAmount === "" || wagerAmount <= 0) return;
+              
+                const newBet: Bet = {
+                  side: selectedSide,
+                  amount: Number(wagerAmount),
+                };
+              
+                setBets((prev) => [...prev, newBet]);
+              
+                setShowModal(false);
+                setSelectedSide(null);
+                setWagerAmount("");
+              }
+
+
+              }
+            >
+              Place {wagerAmount === "" ? 0 : wagerAmount}pt Bet
+            </Button>
+
+          </div>
+
+    </div>
+
+)}
+
+
     </div>
   );
 }
