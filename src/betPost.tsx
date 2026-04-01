@@ -135,7 +135,7 @@ rightLabel,
           backgroundColor = {backgroundColor}  
           textColor= {textColor}
           fontSize={fontSize}
-          onClick={() => setVotes(votes + 5)}
+          onClick={() => setVotes(votes + 1)}
         >
           ⬆️
         </Button>
@@ -145,7 +145,7 @@ rightLabel,
           backgroundColor = {backgroundColor} 
           textColor= {textColor}
           fontSize={fontSize}
-          onClick={() => setVotes(votes - 5)}
+          onClick={() => setVotes(votes - 1)}
         >
           ⬇️
         </Button>
@@ -159,6 +159,19 @@ rightLabel,
         >
           {showComments ? "Hide Comments" : "Show Comments"}
         </Button>
+
+
+      <Button
+        backgroundColor= "#F7BB65"
+        textColor= {textColor}
+        fontSize={fontSize}
+        pillShape
+      >
+        Report
+      </Button>
+
+
+
       </div>
 
       {showComments && (
