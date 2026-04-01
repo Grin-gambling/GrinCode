@@ -12,10 +12,8 @@ type postProps = {
     betBarColor?: string;
     leftLabel: string;
     rightLabel: string;
-  timerStarted: boolean;
-  setTimerStarted: React.Dispatch<React.SetStateAction<boolean>>;
-  timeLeft: number;
-  setTimeLeft: React.Dispatch<React.SetStateAction<number>>;
+    startAllTimers: boolean;
+
     
     // children?: React.ReactNode;
 };
@@ -36,15 +34,13 @@ content,
 betBarColor,
 leftLabel,
 rightLabel,
-timerStarted,
-// setTimerStarted,
-timeLeft,
-setTimeLeft
+startAllTimers,
 
 }: postProps) {
   const [votes, setVotes] = useState(0);
 
   const [bets, setBets] = useState<Bet[]>([]);
+
 
   // const [timeLeft, setTimeLeft] = useState(10);
   
@@ -54,6 +50,9 @@ setTimeLeft
 
   const [showPopup, setShowPopup] = useState(false);
   const [hasEnded, setHasEnded] = useState(false);
+
+  const [timeLeft, setTimeLeft] = useState(5);
+  const [timerStarted, setTimerStarted] = useState(false);
 
 
   const [showModal, setShowModal] = useState(false);
@@ -70,6 +69,12 @@ setTimeLeft
       inputRef.current.select(); // highlights number
     }
   }, [showModal, selectedSide]);
+
+  useEffect(() => {
+    if (startAllTimers) {
+      setTimerStarted(true);
+    }
+  }, [startAllTimers]);
 
 
   useEffect(() => {
@@ -190,6 +195,7 @@ setTimeLeft
           onClick={() => {
             setSelectedSide("yes");
             setShowModal(true);
+
           }}
           style={{
             ...styles.barFill,
@@ -208,8 +214,9 @@ setTimeLeft
         {/* RIGHT (NO) */}
         <div
           onClick={() => {
-            setSelectedSide("yes");
+            setSelectedSide("no");
             setShowModal(true);
+
           }}
           style={{
             height: "100%",
