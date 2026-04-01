@@ -5,13 +5,18 @@ import './App.css'
 import banner from "./components/gambling-banner.jpg";
 import Button from './button';
 import Post from './betPost';
-
+import { useState } from "react";
 
 export default function App() {
 
   var backgroundColor = "#DA291C"
   var textcolor = "white"
   var fontSize = 18
+
+  const [timerStarted, setTimerStarted] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(5);
+
+  // const [showPopup, setShowPopup] = useState(false);
   
   return (
     <div>
@@ -37,6 +42,21 @@ export default function App() {
       </Button>
     </div>
 
+      <div className="button-area">
+        <Button
+          backgroundColor="#444"
+          textColor="#fff"
+          fontSize={fontSize}
+          pillShape
+          width="200px"
+          onClick={() => setTimerStarted(true)}
+        >
+          Pass Time
+        </Button>
+      </div>
+
+
+
       <p> Tuition doesn't gamble away itself Grinnellians do har har</p>
 
     <div>
@@ -49,6 +69,12 @@ export default function App() {
         content="chances that team1 beats team2"
         leftLabel='team1'
         rightLabel='team2'
+
+        timerStarted={timerStarted}
+        setTimerStarted={setTimerStarted}
+        timeLeft={timeLeft}
+        setTimeLeft={setTimeLeft}
+
       />
     </div>
     
