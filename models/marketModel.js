@@ -16,11 +16,32 @@ async function createMarket(question, description, client = db) {
   return result.rows[0];
 }
 
-// adjust odd function (hard)
-
 // resolve/close function
+async function resolveMarket(marketID) {
+  const query = `
+    UPDATE markets
+    SET status = 'closed'
+    WHERE id = marketID
+    RETURNING id, user_id, question, market_type, status, created_at
+  `;
+  // go in to table, find the one with the ID and set to closed
+
+  const result = await client.query(query, [marketID]);
+  return result.rows[0];
+}
 
 // check status
+async function checkStatus(marketID) {
+  const query = `
+    SELECT id, question, status
+    FROM markets
+    WHERE id = $1
+  `;
+  // go in to table, find the one with the ID and check if closed or not
+
+  const result = await client.query(query, [marketID]);
+  return result.rows[0];
+}
 
 // all the different search variations
 
@@ -33,7 +54,7 @@ async function getMarketById(marketID) {
     `;
     // here we are searching the TABLE by their id
   
-    const result = await db.query(query, [marketID]);
+    const result = await client.query(query, [marketID]);
     return result.rows[0];
   }
 
@@ -46,7 +67,7 @@ async function getMarketByQuestion(question) {
     `;
     // here we are searching the TABLE by the question
   
-    const result = await db.query(query, [question]);
+    const result = await client.query(query, [question]);
     return result.rows[0];
   }
 
