@@ -31,6 +31,8 @@ export default function App() {
   const [newLeft, setNewLeft] = useState("");
   const [newRight, setNewRight] = useState("");
 
+  const [startAllTimers, setStartAllTimers] = useState(false);
+
   const handleCreatePost = () => {
     if (!newTitle || !newContent || !newLeft || !newRight) return;
 
@@ -72,6 +74,21 @@ export default function App() {
         </Button>
       </div>
 
+
+      <div className="button-area">
+        <Button
+          backgroundColor="#000000"
+          textColor={textcolor}
+          fontSize={fontSize}
+          pillShape
+          width="150px"
+          onClick={() => setStartAllTimers(true)}
+        >
+          Pass Time
+        </Button>
+      </div>
+
+
       <p>Tuition doesn't gamble away itself Grinnellians do har har</p>
 
       <div>
@@ -86,6 +103,7 @@ export default function App() {
             content={post.content}
             leftLabel={post.leftLabel}
             rightLabel={post.rightLabel}
+            startAllTimers={startAllTimers}
           />
         ))}
       </div>
