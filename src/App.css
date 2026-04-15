@@ -1,0 +1,52 @@
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background-color: white !important;
+  color: black;
+  overflow-x: hidden;
+}
+
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.banner {
+  position: relative;
+  /* border-top: 2px solid #DA291C; Uncomment if we add text above banner */
+  /* border-bottom: 2px solid #DA291C; Uncomment if we add text above banner */
+}
+
+.banner img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  display: block;
+}
+
+.banner h1 {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  font-family: Futura, sans-serif;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+  font-size: 48px;
+  color: white;
+  font-weight: normal;
+}
+
+.button-area {
+  margin-top: 20px;
+  margin-left: 1100px;
+}
+
+.button-area button:hover {
+  color: black !important; 
+}
