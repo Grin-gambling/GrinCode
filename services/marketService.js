@@ -2,6 +2,10 @@ const db = require('../db/db');
 const marketModel = require('../models/marketModel');
 const outcomeModel = require('../models/outcomeModel');
 
+
+createMarket("Will Yousseff Show up", "What that says", "No way", "somehow yes")
+
+
 /**
  * Create a market with outcomes using user input
  * USE TO CONNECT TO FRONTEND 
@@ -10,21 +14,21 @@ const outcomeModel = require('../models/outcomeModel');
  * @param {string} outcome2
  */
 
-async function createMarket(question, description, outcome1, outcome2) {    
+async function createMarket(question, content, outcome1, outcome2) {    
     const client = await db.connect();
   
     try {
       await client.query('BEGIN');
   
       // Validate inputs
-      if (!question || !description) {
+      if (!question || !content) {
         throw new Error('Invalid market data');
       }
   
       // Create market 
       const market = await marketModel.createMarket(
         question,
-        description,
+        content,
         client
       );
   

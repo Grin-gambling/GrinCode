@@ -3,7 +3,9 @@
 -- users, markets (which are the bets people create), outcomes, 
 -- wagers which are what users place, and transactions to moniter point movement
 -- each comes with a unique ID, and other fields
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+-- CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+
 
 -- USERS (important info is username, password and balance)
 CREATE TABLE users (
@@ -15,13 +17,12 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT NOW() -- time created
 );
 
-
 -- MARKETS (important info is the question)
 CREATE TABLE markets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(), -- ID
   user_id UUID REFERENCES users(id) ON DELETE CASCADE, -- who made it
   question TEXT NOT NULL, -- title
-  description TEXT NOT NULL, -- elaboration of what the market it
+  content TEXT NOT NULL, -- elaboration of what the market it
   market_type TEXT NOT NULL DEFAULT 'binary' CHECK (market_type IN ('binary', 'multiple_choice')), -- type of bet
   status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed', 'resolved')), -- open closed resolved
   created_at TIMESTAMP DEFAULT NOW() -- time created
@@ -65,10 +66,6 @@ CREATE TABLE transactions (
 -- INDEXES 
 
 CREATE INDEX idx_users_username ON users(username);
-
-CREATE INDEX idx_events_created_by ON events(created_by);
-
-CREATE INDEX idx_markets_event_id ON markets(event_id);
 
 CREATE INDEX idx_outcomes_market_id ON outcomes(market_id);
 

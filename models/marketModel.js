@@ -5,14 +5,14 @@ const db = require('../db/db');
 
 
 // Create a new market 
-async function createMarket(question, description, client = db) {
+async function createMarket(question, content, client = db) {
   const query = `
-    INSERT INTO markets (question, description)
+    INSERT INTO markets (question, content)
     VALUES ($1, $2)
     RETURNING id, user_id, question, market_type, status, created_at
   `;
 
-  const result = await client.query(query, [question, description]);
+  const result = await client.query(query, [question, content]);
   return result.rows[0];
 }
 
