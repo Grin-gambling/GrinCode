@@ -3,6 +3,7 @@ import { useRef, useEffect } from "react";
 import Button from "./button"
 
 type postProps = {
+    marketId: string;
     backgroundColor: string;
     textColor: string;
     fontSize: number;
@@ -10,21 +11,21 @@ type postProps = {
     title: string;
     content: string;
     betBarColor?: string;
+    leftOutcomeId: string;
     leftLabel: string;
+    leftTotal: number;
+    rightOutcomeId: string;
     rightLabel: string;
+    rightTotal: number;
+    onPlaceBet: (marketId: string, outcomeId: string, amount: number) => Promise<void>;
     startAllTimers: boolean;
 
     
     // children?: React.ReactNode;
 };
 
-type Bet = {
-  side: "yes" | "no";
-  amount: number;
-};
-
-
 export default function Post({ 
+marketId,
 backgroundColor,
 textColor,
 fontSize,
@@ -32,14 +33,17 @@ pillShape,
 title,
 content,
 betBarColor,
+leftOutcomeId,
 leftLabel,
+leftTotal,
+rightOutcomeId,
 rightLabel,
+rightTotal,
+onPlaceBet,
 startAllTimers,
 
 }: postProps) {
   const [votes, setVotes] = useState(0);
-
-  const [bets, setBets] = useState<Bet[]>([]);
 
 
   // const [timeLeft, setTimeLeft] = useState(10);
@@ -58,6 +62,8 @@ startAllTimers,
   const [showModal, setShowModal] = useState(false);
   const [selectedSide, setSelectedSide] = useState<"yes" | "no" | null>(null);
   const [wagerAmount, setWagerAmount] = useState<number | "">("");
+  const [betError, setBetError] = useState("");
+  const [isSubmittingBet, setIsSubmittingBet] = useState(false);
 
   // const [timerStarted, setTimerStarted] = useState(false);
 
@@ -102,13 +108,8 @@ startAllTimers,
     ? rightLabel
     : "";
 
-  const yesTotal = bets
-    .filter((bet) => bet.side === "yes")
-    .reduce((sum, bet) => sum + bet.amount, 0);
-
-  const noTotal = bets
-    .filter((bet) => bet.side === "no")
-    .reduce((sum, bet) => sum + bet.amount, 0);
+  const yesTotal = leftTotal;
+  const noTotal = rightTotal;
 
   const total = yesTotal + noTotal;
   const yesPercent = total === 0 ? 50 : (yesTotal / total) * 100;
@@ -359,6 +360,12 @@ startAllTimers,
 
 </div>
 
+{betError && (
+  <p style={{ color: "#ffb3b3", marginTop: "12px", marginBottom: 0 }}>
+    {betError}
+  </p>
+)}
+
 {selectedSide && (
   <input
   ref={inputRef}
@@ -384,25 +391,44 @@ startAllTimers,
               fontSize={fontSize}
               pillShape
               width="200px"
-              onClick={() => {
-                if (!selectedSide || wagerAmount === "" || wagerAmount <= 0) return;
-              
-                const newBet: Bet = {
-                  side: selectedSide,
-                  amount: Number(wagerAmount),
-                };
-              
-                setBets((prev) => [...prev, newBet]);
-              
-                setShowModal(false);
-                setSelectedSide(null);
-                setWagerAmount("");
-              }
+              onClick={async () => {
+                if (
+                  !selectedSide ||
+                  wagerAmount === "" ||
+                  wagerAmount <= 0 ||
+                  isSubmittingBet
+                ) {
+                  return;
+                }
 
+                setBetError("");
+                setIsSubmittingBet(true);
 
-              }
+                try {
+                  const outcomeId =
+                    selectedSide === "yes" ? leftOutcomeId : rightOutcomeId;
+
+                  await onPlaceBet(
+                    marketId,
+                    outcomeId,
+                    Number(wagerAmount)
+                  );
+
+                  setShowModal(false);
+                  setSelectedSide(null);
+                  setWagerAmount("");
+                } catch (error) {
+                  setBetError(
+                    error instanceof Error ? error.message : "Failed to place bet"
+                  );
+                } finally {
+                  setIsSubmittingBet(false);
+                }
+              }}
             >
-              Place {wagerAmount === "" ? 0 : wagerAmount}pt Bet
+              {isSubmittingBet
+                ? "Placing Bet..."
+                : `Place ${wagerAmount === "" ? 0 : wagerAmount}pt Bet`}
             </Button>
 
           </div>

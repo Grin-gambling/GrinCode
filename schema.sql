@@ -66,10 +66,6 @@ CREATE TABLE transactions (
 
 CREATE INDEX idx_users_username ON users(username);
 
-CREATE INDEX idx_events_created_by ON events(created_by);
-
-CREATE INDEX idx_markets_event_id ON markets(event_id);
-
 CREATE INDEX idx_outcomes_market_id ON outcomes(market_id);
 
 CREATE INDEX idx_wagers_user_id ON wagers(user_id);

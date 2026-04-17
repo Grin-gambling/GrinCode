@@ -1,6 +1,6 @@
-const db = require('../db/db');
-const marketModel = require('../models/marketModel');
-const outcomeModel = require('../models/outcomeModel');
+import db from '../db/db.js';
+import * as marketModel from '../models/marketModel.js';
+import * as outcomeModel from '../models/outcomeModel.js';
 
 /**
  * Create a market with outcomes using user input
@@ -54,6 +54,4 @@ async function createMarket(question, description, outcome1, outcome2) {
     }
   }
 
-module.exports = {
-  createMarket,
-};
+export { createMarket };

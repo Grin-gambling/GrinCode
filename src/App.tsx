@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import './App.css'
 import banner from "./components/gambling-banner.jpg";
 import Button from './button';
@@ -16,25 +16,98 @@ const fakePlayers = [
 const currentUser = fakePlayers[0];
 
 type BetPost = {
+  id: string;
   title: string;
   content: string;
+  leftOutcomeId: string;
   leftLabel: string;
+  leftTotal: number;
+  rightOutcomeId: string;
   rightLabel: string;
+  rightTotal: number;
 };
+
+type ApiMarketRow = {
+  id: string;
+  question: string;
+  description: string;
+  outcome_id: string;
+  label: string;
+  total_amount: number | string;
+};
+
+function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
+  const groupedMarkets = new Map<
+    string,
+    {
+      id: string;
+      title: string;
+      content: string;
+      outcomes: Array<{
+        id: string;
+        label: string;
+        totalAmount: number;
+      }>;
+    }
+  >();
+
+  for (const row of rows) {
+    const existingMarket = groupedMarkets.get(row.id);
+
+    if (existingMarket) {
+      existingMarket.outcomes.push({
+        id: row.outcome_id,
+        label: row.label,
+        totalAmount: Number(row.total_amount),
+      });
+      continue;
+    }
+
+    groupedMarkets.set(row.id, {
+      id: row.id,
+      title: row.question,
+      content: row.description,
+      outcomes: [
+        {
+          id: row.outcome_id,
+          label: row.label,
+          totalAmount: Number(row.total_amount),
+        },
+      ],
+    });
+  }
+
+  return Array.from(groupedMarkets.values())
+    .map((market) => {
+      if (market.outcomes.length < 2) {
+        return null;
+      }
+
+      const [leftOutcome, rightOutcome] = market.outcomes;
+
+      return {
+        id: market.id,
+        title: market.title,
+        content: market.content,
+        leftOutcomeId: leftOutcome.id,
+        leftLabel: leftOutcome.label,
+        leftTotal: leftOutcome.totalAmount,
+        rightOutcomeId: rightOutcome.id,
+        rightLabel: rightOutcome.label,
+        rightTotal: rightOutcome.totalAmount,
+      };
+    })
+    .filter((market): market is BetPost => market !== null);
+}
 
 export default function App() {
   const backgroundColor = "#DA291C";
   const textcolor = "white";
   const fontSize = 18;
 
-  const [posts, setPosts] = useState<BetPost[]>([
-    {
-      title: "Random Bet",
-      content: "chances that team1 beats team2",
-      leftLabel: "team1",
-      rightLabel: "team2",
-    },
-  ]);
+  const [posts, setPosts] = useState<BetPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -44,7 +117,57 @@ export default function App() {
 
   const [startAllTimers, setStartAllTimers] = useState(false);
 
-  const handleCreatePost = () => {
+  const loadMarkets = async () => {
+    try {
+      setIsLoading(true);
+      setErrorMessage("");
+
+      const response = await fetch("/api/markets");
+
+      if (!response.ok) {
+        throw new Error("Failed to load markets");
+      }
+
+      const rows: ApiMarketRow[] = await response.json();
+      setPosts(mapMarketRowsToPosts(rows));
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to load markets";
+      setErrorMessage(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadMarkets();
+  }, []);
+
+  const placeBet = async (
+    marketId: string,
+    outcomeId: string,
+    amount: number
+  ) => {
+    const response = await fetch(`/api/markets/${marketId}/bets`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        outcomeId,
+        amount,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.error || "Failed to place bet");
+    }
+
+    await loadMarkets();
+  };
+
+  const handleCreatePost = async () => {
     if (!newTitle || !newContent || !newLeft || !newRight) return;
     const newPost: BetPost = {
       title: newTitle,
@@ -53,13 +176,39 @@ export default function App() {
       rightLabel: newRight,
     };
 
-    setPosts((prev) => [newPost, ...prev]);
+    try {
+      setErrorMessage("");
 
-    setNewTitle("");
-    setNewContent("");
-    setNewLeft("");
-    setNewRight("");
-    setShowCreateModal(false);
+      const response = await fetch("/api/markets", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          question: newTitle,
+          description: newContent,
+          outcome1: newLeft,
+          outcome2: newRight,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => null);
+        throw new Error(errorBody?.error || "Failed to create market");
+      }
+
+      setNewTitle("");
+      setNewContent("");
+      setNewLeft("");
+      setNewRight("");
+      setShowCreateModal(false);
+
+      await loadMarkets();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to create market";
+      setErrorMessage(message);
+    }
   };
 
   return (
@@ -212,5 +361,3 @@ export default function App() {
     </div>
   );
 }
-
-

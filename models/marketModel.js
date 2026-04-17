@@ -1,4 +1,4 @@
-const db = require('../db/db');
+import db from '../db/db.js';
 
 // The way this works is basically const query is a bit of SQL input
 // The rest of it is just details of that market, and what we return I guess
@@ -17,7 +17,7 @@ async function createMarket(question, description, client = db) {
 }
 
 // resolve/close function
-async function resolveMarket(marketID) {
+async function resolveMarket(marketID, client = db) {
   const query = `
     UPDATE markets
     SET status = 'closed'
@@ -31,7 +31,7 @@ async function resolveMarket(marketID) {
 }
 
 // check status
-async function checkStatus(marketID) {
+async function checkStatus(marketID, client = db) {
   const query = `
     SELECT id, question, status
     FROM markets
@@ -46,7 +46,7 @@ async function checkStatus(marketID) {
 // all the different search variations
 
 // Get market by ID
-async function getMarketById(marketID) {
+async function getMarketById(marketID, client = db) {
     const query = `
       SELECT id, qustion, market_type, status, created_at
       FROM markets
@@ -59,7 +59,7 @@ async function getMarketById(marketID) {
   }
 
 // Get market by question 
-async function getMarketByQuestion(question) {
+async function getMarketByQuestion(question, client = db) {
     const query = `
       SELECT id, qustion, market_type, status, created_at
       FROM markets
@@ -71,6 +71,13 @@ async function getMarketByQuestion(question) {
     return result.rows[0];
   }
 
+export {
+  createMarket,
+  resolveMarket,
+  checkStatus,
+  getMarketById,
+  getMarketByQuestion,
+};
 
 
 

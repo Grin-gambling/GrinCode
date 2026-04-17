@@ -1,3 +1,5 @@
+import db from '../db/db.js';
+
 // Create a new market
 async function createOutcome(market_id, label, client = db) {
     const query = `
@@ -14,29 +16,33 @@ async function createOutcome(market_id, label, client = db) {
 // resolve if win or lose
 
 // change odds
-async function changeOdds(marketID, odds) {
+async function changeOdds(outcomeID, newOdds, client = db) {
   const query = `
     UPDATE outcomes
-    SET odds = odds
-    WHERE id = marketID
+    SET odds = $1
+    WHERE id = $2
     RETURNING id, market_id, label, odds, is_winner
   `;
-  // go in to table, find the one with the ID and set to new odds
 
-  const result = await client.query(query, [marketID, odds]);
+  const result = await client.query(query, [newOdds, outcomeID]);
   return result.rows[0];
 }
 
-// make winner
-async function changeOdds(marketID) {
+// set winner
+async function setWinner(outcomeID, client = db) {
   const query = `
     UPDATE outcomes
-    SET is_winner = 'FALSE'
-    WHERE id = marketID
+    SET is_winner = TRUE
+    WHERE id = $1
     RETURNING id, market_id, label, odds, is_winner
   `;
-  // go in to table, find the one with the ID and set to winner
 
-  const result = await client.query(query, [marketID]);
+  const result = await client.query(query, [outcomeID]);
   return result.rows[0];
 }
+
+export {
+  createOutcome,
+  changeOdds,
+  setWinner,
+};
