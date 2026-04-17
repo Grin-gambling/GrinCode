@@ -19,7 +19,7 @@ body {
 .banner {
   position: relative;
   /* border-top: 2px solid #DA291C; Uncomment if we add text above banner */
-  border-bottom: 4px solid #DA291C;
+  /* border-bottom: 2px solid #DA291C; Uncomment if we add text above banner */
 }
 
 .banner img {
