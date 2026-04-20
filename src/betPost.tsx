@@ -117,16 +117,17 @@ startAllTimers,
 
 
   const styles = {
-    card: {
-      border: "1px solid #ccc",
-      padding: "16px",
-      margin: "16px 0 16px 20px", //the 20 moves it to the right a little
-      borderRadius: pillShape ? "40px" : "8px",
-      backgroundColor: backgroundColor,
-      color: textColor,
-      fontSize: fontSize,
-      width: "50%",
-    },
+card: {
+  border: "4px solid #DA291C",
+  padding: "16px",
+  margin: "16px 0 16px 20px",
+  borderRadius: pillShape ? "40px" : "8px",
+  backgroundColor: "white",
+  color: "black",
+  fontSize: fontSize,
+  width: "60%",
+  fontFamily: "Futura, 'Trebuchet MS', Arial, sans-serif",
+},
     actions: {
       display: "flex",
       gap: "10px",
@@ -225,7 +226,7 @@ startAllTimers,
             backgroundColor: "#00DBD7",
             display: "flex",
             alignItems: "center",
-            justifyContent: "flex-start",
+            justifyContent: "center",
             paddingLeft: noPercent < 5 ? "0px" : "6px",           
             color: "#000",
             transition: "width 0.3s ease",
@@ -241,7 +242,7 @@ startAllTimers,
 
 
         <Button //Upvote
-          backgroundColor = {backgroundColor}  
+          backgroundColor = "#ffffff" 
           textColor= {textColor}
           fontSize={fontSize}
           onClick={() => setVotes(votes + 1)}
@@ -251,7 +252,7 @@ startAllTimers,
 
         <span>{votes}</span> {/*display amount of votes*/}
         <Button //Downvote
-          backgroundColor = {backgroundColor} 
+          backgroundColor = "#ffffff"
           textColor= {textColor}
           fontSize={fontSize}
           onClick={() => setVotes(votes - 1)}
@@ -261,7 +262,7 @@ startAllTimers,
 
 
         <Button
-          backgroundColor="#FFFFF0"
+          backgroundColor="#ffffff"
           textColor="#000"
           fontSize={14}
           onClick={() => setShowComments(!showComments)}
@@ -269,17 +270,16 @@ startAllTimers,
           {showComments ? "Hide Comments" : "Show Comments"}
         </Button>
 
-
+      <div style={{ marginLeft: "auto" }}>
       <Button
         backgroundColor= "#F7BB65"
         textColor= {textColor}
-        fontSize={fontSize}
+        fontSize={14}
         pillShape
       >
         Report
       </Button>
-
-
+      </div>
 
       </div>
 
@@ -383,7 +383,6 @@ startAllTimers,
   }}
 />
 )}
-
             <Button
               backgroundColor={backgroundColor}
               topMargin="15px"
@@ -439,8 +438,6 @@ startAllTimers,
 
 )}
 
-
-
 {showPopup && (//Shows popup when timer elapses
   <div
     onClick={() => setShowPopup(false)}
@@ -469,10 +466,6 @@ startAllTimers,
     </div>
   </div>
 )}
-
-
-
-
     </div>
   );
 }
