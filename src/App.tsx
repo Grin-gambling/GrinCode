@@ -3,6 +3,8 @@ import './App.css'
 import banner from "./components/gambling-banner.jpg";
 import Button from './button';
 import Post from './betPost';
+import Leaderboard from "./Leaderboard";
+import Currency from "./Currency";
 
 type BetPost = {
   id: string;
@@ -88,6 +90,15 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
     })
     .filter((market): market is BetPost => market !== null);
 }
+
+const fakePlayers = [
+  { id: "1", name: "Mina", balance: 1000 },
+  { id: "2", name: "Lucas", balance: 0 },
+  { id: "3", name: "Sam", balance: 0 },
+  { id: "4", name: "Youssef", balance: 0 },
+];
+
+const currentUser = fakePlayers[0];
 
 export default function App() {
   const backgroundColor = "#DA291C";
@@ -202,6 +213,7 @@ export default function App() {
           alt="Website Banner"
         />
         <h1>G R I N G A M B L I N G</h1>
+        <Currency balance={currentUser.balance} />
       </div>
 
       <div className="button-area">
@@ -216,8 +228,8 @@ export default function App() {
         </Button>
       </div>
 
-
-      <div className="button-area">
+    {/* Uncomment if we end up using pass time button */}
+      {/* <div className="button-area">
         <Button
           backgroundColor="#000000"
           textColor={textcolor}
@@ -228,37 +240,55 @@ export default function App() {
         >
           Pass Time
         </Button>
-      </div>
-
-
-      <p>Tuition doesn't gamble away itself Grinnellians do har har</p>
+      </div> */}
 
       {errorMessage && <p>{errorMessage}</p>}
       {isLoading && <p>Loading markets...</p>}
 
       <div>
-        {posts.map((post) => (
-          <Post
-            key={post.id}
-            backgroundColor={backgroundColor}
-            textColor={textcolor}
-            fontSize={fontSize}
-            pillShape
-            marketId={post.id}
-            title={post.title}
-            content={post.content}
-            leftOutcomeId={post.leftOutcomeId}
-            leftLabel={post.leftLabel}
-            leftTotal={post.leftTotal}
-            rightOutcomeId={post.rightOutcomeId}
-            rightLabel={post.rightLabel}
-            rightTotal={post.rightTotal}
-            onPlaceBet={placeBet}
-            startAllTimers={startAllTimers}
-          />
-        ))}
-      </div>
+<div style={{ display: "flex" }}>
 
+  {/* LEFT SIDE: Bets feed */}
+  <div style={{ flex: 1 }}>
+    {posts.map((post) => (
+      <Post
+        key={post.id}
+        backgroundColor={backgroundColor}
+        textColor={textcolor}
+        fontSize={fontSize}
+        pillShape
+        marketId={post.id}
+        title={post.title}
+        content={post.content}
+        leftOutcomeId={post.leftOutcomeId}
+        leftLabel={post.leftLabel}
+        leftTotal={post.leftTotal}
+        rightOutcomeId={post.rightOutcomeId}
+        rightLabel={post.rightLabel}
+        rightTotal={post.rightTotal}
+        onPlaceBet={placeBet}
+        startAllTimers={startAllTimers}
+      />
+    ))}
+  </div>
+
+  {/* RIGHT SIDE: Leaderboard */}
+  <div
+    style={{
+      width: "250px",
+      border: "4px solid #DA291C",
+      padding: "15px",
+      borderRadius: "8px",
+      marginLeft: "10px",
+      marginTop: "20px",
+      marginRight: "20px",
+    }}
+  >
+    <Leaderboard players={fakePlayers} />
+  </div>
+
+</div>
+</div>
       {showCreateModal && (
         <div
           onClick={() => setShowCreateModal(false)}
