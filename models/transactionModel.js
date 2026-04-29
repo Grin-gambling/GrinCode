@@ -1,5 +1,5 @@
 // Create a new transaction
-async function transaction(user_id, amount, type, reference_id, client = db) {
+async function createTransaction(user_id, amount, type, reference_id, client = db) {
     const query = `
       INSERT INTO transactions (user_id, amount, type, reference_id)
       VALUES ($1, $2, $3, $4)
@@ -14,4 +14,8 @@ async function transaction(user_id, amount, type, reference_id, client = db) {
 // search variations
 
 // execute (when bet finishes or when bet is placed), talks to user
+
+module.exports = {
+  createTransaction,
+};
 

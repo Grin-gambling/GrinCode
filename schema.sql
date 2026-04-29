@@ -22,6 +22,7 @@ CREATE TABLE markets (
   user_id UUID REFERENCES users(id) ON DELETE CASCADE, -- who made it
   question TEXT NOT NULL, -- title
   description TEXT NOT NULL, -- elaboration of what the market it
+  upvotes NUMERIC(3,0) DEFAULT 0 -- upvotes
   market_type TEXT NOT NULL DEFAULT 'binary' CHECK (market_type IN ('binary', 'multiple_choice')), -- type of bet
   status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed', 'resolved')), -- open closed resolved
   created_at TIMESTAMP DEFAULT NOW() -- time created

@@ -71,12 +71,40 @@ async function getMarketByQuestion(question, client = db) {
     return result.rows[0];
   }
 
+  async function upvote(id, client = db) {
+    const query = `
+      UPDATE markets
+      SET upvotes = upvotes + 1
+      WHERE id = $1
+      RETURNING upvotes
+    `;
+    // set the votes to +1
+  
+    const result = await client.query(query, [id]);
+    return result.rows[0];
+  }
+
+  async function downvote(id, client = db) {
+    const query = `
+      UPDATE markets
+      SET upvotes = upvotes - 1
+      WHERE id = $1
+      RETURNING votes
+    `;
+    // set the votes to +1
+  
+    const result = await client.query(query, [id]);
+    return result.rows[0];
+  }
+
 export {
   createMarket,
   resolveMarket,
   checkStatus,
   getMarketById,
   getMarketByQuestion,
+  upvote,
+  downvote,
 };
 
 

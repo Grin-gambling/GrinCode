@@ -54,4 +54,13 @@ async function createMarket(question, description, outcome1, outcome2) {
     }
   }
 
-export { createMarket };
+async function upvoteBet(market_id, direction){
+  const client = await db.connect();
+  if (direction == up){
+    await marketModel.upvote(market_id);
+  } else {
+    await marketModel.downvote(market_id);
+  }
+}
+
+export { createMarket, upvoteBet };

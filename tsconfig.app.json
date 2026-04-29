@@ -22,7 +22,10 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    "allowJs": true,
+    "noImplicitAny": false
   },
-  "include": ["src"]
+  "include": ["src", "services", "models"]
 }

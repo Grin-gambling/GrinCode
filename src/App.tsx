@@ -31,6 +31,7 @@ type ApiMarketRow = {
   id: string;
   question: string;
   description: string;
+  upvotes: number;
   outcome_id: string;
   label: string;
   total_amount: number | string;
