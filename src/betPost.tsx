@@ -321,7 +321,7 @@ export default function Post({
         <div style={{ marginLeft: "auto" }}>
           <Button
             backgroundColor="#F7BB65"
-            textColor={textColor}
+            textColor= "#000"
             fontSize={14}
             pillShape
           >
