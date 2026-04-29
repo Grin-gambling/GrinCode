@@ -61,6 +61,20 @@ CREATE TABLE transactions (
   created_at TIMESTAMP DEFAULT NOW() -- time created
 );
 
+CREATE TABLE comments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  market_id UUID REFERENCES markets(id) ON DELETE CASCADE,
+  body TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE market_votes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  market_id UUID REFERENCES markets(id) ON DELETE CASCADE,
+  vote_type TEXT NOT NULL CHECK (vote_type IN ('up', 'down')),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 
 -- INDEXES 
 
@@ -72,3 +86,5 @@ CREATE INDEX idx_wagers_user_id ON wagers(user_id);
 CREATE INDEX idx_wagers_outcome_id ON wagers(outcome_id);
 
 CREATE INDEX idx_transactions_user_id ON transactions(user_id);
+CREATE INDEX idx_comments_market_id ON comments(market_id);
+CREATE INDEX idx_market_votes_market_id ON market_votes(market_id);
