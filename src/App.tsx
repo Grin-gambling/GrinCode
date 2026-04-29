@@ -16,6 +16,8 @@ type BetPost = {
   rightOutcomeId: string;
   rightLabel: string;
   rightTotal: number;
+  upvotes: number;
+  downvotes: number;
 };
 
 type ApiMarketRow = {
@@ -25,6 +27,8 @@ type ApiMarketRow = {
   outcome_id: string;
   label: string;
   total_amount: number | string;
+  total_upvotes: number | string;
+  total_downvotes: number | string;
 };
 
 function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
@@ -116,6 +120,7 @@ export default function App() {
   const [newRight, setNewRight] = useState("");
 
   const [startAllTimers, setStartAllTimers] = useState(false);
+
 
   const loadMarkets = async () => {
     try {
