@@ -65,6 +65,10 @@ startAllTimers,
   const [betError, setBetError] = useState("");
   const [isSubmittingBet, setIsSubmittingBet] = useState(false);
 
+  // Comments
+  const [comments, setComments] = useState<string[]>([]);
+  const [newComment, setNewComment] = useState("");
+
   // const [timerStarted, setTimerStarted] = useState(false);
 
 
@@ -136,7 +140,7 @@ card: {
     comments: {
       marginTop: "10px",
       padding: "10px",
-      background: backgroundColor,
+      background: "#ffffff",
     },
     // innerBox: {
     //   border: "1px solid #999",
@@ -247,7 +251,7 @@ card: {
           fontSize={fontSize}
           onClick={() => setVotes(votes + 1)}
         >
-          ⬆️
+          <span style={{ color: "#DA291C" }}>⬆</span>
         </Button>
 
         <span>{votes}</span> {/*display amount of votes*/}
@@ -257,7 +261,7 @@ card: {
           fontSize={fontSize}
           onClick={() => setVotes(votes - 1)}
         >
-          ⬇️
+          <span style={{ color: "#DA291C" }}>⬇</span>
         </Button>
 
 
@@ -285,8 +289,42 @@ card: {
 
       {showComments && (
         <div style={styles.comments}>
-          <p>💬 Comment 1</p>
-          <p>💬 Comment 2</p>
+              <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+      <input
+        type="text"
+        placeholder="Write a comment..."
+        value={newComment}
+        onChange={(e) => setNewComment(e.target.value)}
+        style={{
+          flex: 1,
+          padding: "8px",
+          borderRadius: "6px",
+          border: "1px solid #ccc",
+        }}
+      />
+
+      <Button
+        backgroundColor="#DA291C"
+        textColor="#fff"
+        fontSize={14}
+        onClick={() => {
+          if (newComment.trim() === "") return;
+
+          setComments([...comments, newComment]);
+          setNewComment("");
+        }}
+      >
+        Post
+      </Button>
+    </div>
+
+    {comments.length === 0 ? (
+      <p>No comments yet.</p>
+    ) : (
+      comments.map((comment, index) => (
+        <p key={index}>💬 {comment}</p>
+      ))
+    )}
         </div>
       )}
 
