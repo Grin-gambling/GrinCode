@@ -1,14 +1,10 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useState } from "react";
 import './App.css'
 import banner from "./components/gambling-banner.jpg";
 import Button from './button';
 import Post from './betPost';
 import Leaderboard from "./Leaderboard";
 import Currency from "./Currency";
-
-import Login from "./Login";
-import Register from "./Registration";
-
 
 type BetPost = {
   id: string;
@@ -114,8 +110,6 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
     .filter((market): market is BetPost => market !== null);
 }
 
-
-
 const fakePlayers = [
   { id: "1", name: "Mina", balance: 1000 },
   { id: "2", name: "Lucas", balance: 0 },
@@ -125,15 +119,7 @@ const fakePlayers = [
 
 const currentUser = fakePlayers[0];
 
-export default function App(): JSX.Element {
-
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
-
-  const [currentLoggedInUser, setCurrentLoggedInUser] = useState<string | null>(null);
-
-
-
+export default function App() {
   const backgroundColor = "#DA291C";
   const textcolor = "white";
   const fontSize = 18;
@@ -308,36 +294,7 @@ export default function App(): JSX.Element {
         >
           Create Bet
         </Button>
-
-        <Button
-          backgroundColor={backgroundColor}
-          textColor={textcolor}
-          fontSize={fontSize}
-          pillShape
-          onClick={() => {    if (currentLoggedInUser) {
-            setCurrentLoggedInUser(null);
-          } else {
-            setShowLoginModal(true);
-          }}}
-        >
-          {currentLoggedInUser ? "Log Out" : "Login"}
-        </Button>
-
-        <Button
-          backgroundColor={backgroundColor}
-          textColor={textcolor}
-          fontSize={fontSize}
-          pillShape
-          onClick={() => setShowRegisterModal(true)}
-        >
-          Sign up
-        </Button>
       </div>
-
-      {/* <div>
-      <Login />
-    </div> */}
-
 
     {/* Uncomment if we end up using pass time button */}
       {/* <div className="button-area">
@@ -479,68 +436,6 @@ export default function App(): JSX.Element {
           </div>
         </div>
       )}
-
-      {showLoginModal && (
-        <div
-          onClick={() => setShowLoginModal(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div onClick={(e) => e.stopPropagation()}>
-            <Login
-              backgroundColor = "white"
-              textColor = {textcolor}
-              fontSize = {fontSize}
-              isOpen={showLoginModal}
-              onClose={() => setShowLoginModal(false)}
-              onLoginSuccess={(name) => {          // ✅ add this
-                setCurrentLoggedInUser(name);
-                setShowLoginModal(false);
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {showRegisterModal && (
-        <div
-          onClick={() => setShowRegisterModal(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div onClick={(e) => e.stopPropagation()}>
-            <Register
-              backgroundColor = "white"
-              textColor = {textcolor}
-              fontSize = {fontSize}
-              isOpen={showRegisterModal}
-              onClose={() => setShowRegisterModal(false)}
-            />
-          </div>
-        </div>
-      )}
     </div>
-
-    
   );
 }
