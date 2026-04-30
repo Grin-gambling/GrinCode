@@ -43,10 +43,10 @@ body {
 }
 
 .button-area {
+  margin-top: 20px;
+  margin-left: 1100px;
   display: flex;
-  justify-content: flex-end;
-  padding-right: 20px; /* optional spacing */
-  margin-top: 10px;    /* optional spacing */
+  gap: 10px;
 }
 
 .button-area button:hover {

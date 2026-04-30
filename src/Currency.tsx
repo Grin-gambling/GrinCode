@@ -16,8 +16,7 @@ const styles: Record<string, React.CSSProperties> = {
     position: "absolute",
     top: "20px",
     right: "20px",
-    zIndex: 1100,
-    border: "2px solid #da291c",
+    zIndex: 1100, 
     backgroundColor: "#fff",
     padding: "10px 16px",
     borderRadius: "12px",
@@ -28,7 +27,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "flex-end",
   },
   label: {
-    fontSize: "15px",
+    fontSize: "10px",
     opacity: 0.6,
     letterSpacing: "1px",
   },
