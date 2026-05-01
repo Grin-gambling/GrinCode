@@ -393,7 +393,7 @@ export default function App(): JSX.Element {
             }
           }}
         >
-          {currentLoggedInUser ? `Log Out (${currentLoggedInUser.username})` : "Login"}
+          {currentLoggedInUser ? `Log out (${currentLoggedInUser.username})` : "Log in"}
         </Button>
 
         <Button
