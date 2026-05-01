@@ -101,9 +101,9 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
 
 const fakePlayers = [
   { id: "1", name: "Mina", balance: 1000 },
-  { id: "2", name: "Lucas", balance: 0 },
-  { id: "3", name: "Sam", balance: 0 },
-  { id: "4", name: "Youssef", balance: 0 },
+  { id: "2", name: "Lucas", balance: 750 },
+  { id: "3", name: "Sam", balance: 100 },
+  { id: "4", name: "Youssef", balance: 100 },
 ];
 
 const currentUser = fakePlayers[0];
@@ -131,6 +131,8 @@ export default function App(): JSX.Element {
   const [newContent, setNewContent] = useState("");
   const [newLeft, setNewLeft] = useState("");
   const [newRight, setNewRight] = useState("");
+
+  const [balance, setBalance] = useState(1000);
 
   const loadMarkets = async () => {
     try {
@@ -179,6 +181,7 @@ export default function App(): JSX.Element {
       throw new Error(errorBody?.error || "Failed to place bet");
     }
 
+    setBalance((prev) => prev - amount);
     await loadMarkets();
   };
 
@@ -230,7 +233,7 @@ export default function App(): JSX.Element {
           alt="Website Banner"
         />
         <h1>G R I N G A M B L I N G</h1>
-        <Currency balance={currentUser.balance} />
+        <Currency balance={balance} />
       </div>
 
       <div className="button-area">
