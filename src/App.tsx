@@ -317,7 +317,7 @@ export default function App(): JSX.Element {
             setShowLoginModal(true);
           }}}
         >
-          {currentLoggedInUser ? "Log Out" : "Login"}
+          {currentLoggedInUser ? "Log out" : "Log in"}
         </Button>
 
         <Button
@@ -428,6 +428,7 @@ export default function App(): JSX.Element {
               display: "flex",
               flexDirection: "column",
               gap: "10px",
+              border: "4px solid #DA291C",
             }}
           >
             <h2 style={{ margin: 0 }}>Create Bet</h2>

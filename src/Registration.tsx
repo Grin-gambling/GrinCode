@@ -70,24 +70,28 @@ type RegisterProps = {
     display: "flex",
     flexDirection: "column",
     padding: "20px",
+    border: "4px solid #DA291C",
     borderRadius: "10px",
     position: "relative",
-    justifyContent: "space-between"
+    justifyContent: "flex-start"
   }}
 >
     <>
-
-      <Button
-        backgroundColor = "Black"
-        textColor={textColor}
-        fontSize={fontSize}
-        pillShape
-        onClick={onClose}
+        <div style={{ width: "100%", display: "flex", justifyContent: "flex-start" }}>
+        <Button
+          backgroundColor="#ffffff"
+          textColor="00000"
+          fontSize={30}
+          pillShape
+          onClick={onClose}
         >
-            X
-      </Button>
+          ×
+        </Button>
+        </div>
 
-      <h2>Registration Form</h2>
+      <h2 style={{ textAlign: "center", fontFamily: "Futura, sans-serif" }}>
+          Sign up to gamble today!
+        </h2>
 
                   {errorMessage && (
                       <span style={{ color: "red", fontSize: "14px" }}>{errorMessage}</span>
@@ -123,10 +127,15 @@ type RegisterProps = {
           <span style={{ color: "red" }}>*Password* is mandatory</span>
         )}
 
-        <input
-          type="submit"
-          style={{ backgroundColor: "#a1eafb" }}
-        />
+                  <Button
+                    backgroundColor="#DA291C"
+                    textColor="white"
+                    pillShape
+                    fontSize={20}
+                    onClick={handleSubmit(onSubmit)}
+                  >
+                    Sign up
+                  </Button>
       </form>
     </>
     </div>

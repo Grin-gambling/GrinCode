@@ -68,28 +68,31 @@ const [errorMessage, setErrorMessage] = useState("");
   style={{
     backgroundColor,
     width: "400px",
-    height: "400px",
+    height: "350px",
     display: "flex",
     flexDirection: "column",
     padding: "20px",
     borderRadius: "10px",
+    border: "4px solid #DA291C",
     position: "relative",
-    justifyContent: "space-between"
+    justifyContent: "flex-start"
   }}
 >
         <div>
         <Button
-          backgroundColor="BLACK"
-          textColor={textColor}
-          fontSize={fontSize}
+          backgroundColor="#ffffff"
+          textColor="00000"
+          fontSize={30}
           pillShape
           onClick={onClose}
         >
-          X
+          ×
         </Button>
       </div>
 
-        <h2>Login Form</h2>
+        <h2 style={{ textAlign: "center", fontFamily: "Futura, sans-serif" }}>
+          Welcome back!
+        </h2>
 
 
               {errorMessage && (
@@ -115,16 +118,18 @@ const [errorMessage, setErrorMessage] = useState("");
             <span style={{ color: "red" }}>*Password* is mandatory</span>
           )}
 
-          <input
-            type="submit"
-            value="Login"
-            style={{ backgroundColor: "#a1eafb" }}
-          />
+          <Button
+            backgroundColor="#DA291C"
+            textColor="white"
+            pillShape
+            fontSize={20}
+            onClick={handleSubmit(onSubmit)}
+          >
+            Log in
+          </Button>
         </form>
       </div>
-
       </div>
-
   );
 }
 
