@@ -1,5 +1,9 @@
 import db from '../db/db.js';
-import { createVote, getVoteTotalsByMarketId } from '../models/voteModel.js';
+import {
+  createVote,
+  getVoteByMarketAndUserId,
+  getVoteTotalsByMarketId,
+} from '../models/voteModel.js';
 
 function createError(message, statusCode) {
   const error = new Error(message);
@@ -7,9 +11,9 @@ function createError(message, statusCode) {
   return error;
 }
 
-async function castVote(marketId, voteType) {
-  if (!marketId) {
-    throw createError('Market ID is required', 400);
+async function castVote(marketId, userId, voteType) {
+  if (!marketId || !userId) {
+    throw createError('Market ID and user ID are required', 400);
   }
 
   if (voteType !== 'up' && voteType !== 'down') {
@@ -30,13 +34,24 @@ async function castVote(marketId, voteType) {
       throw createError('Market not found', 404);
     }
 
-    await createVote(marketId, voteType, client);
+    const existingVote = await getVoteByMarketAndUserId(marketId, userId, client);
+
+    if (existingVote) {
+      throw createError('You have already voted on this market', 409);
+    }
+
+    await createVote(marketId, userId, voteType, client);
     const totals = await getVoteTotalsByMarketId(marketId, client);
 
     await client.query('COMMIT');
     return totals;
   } catch (error) {
     await client.query('ROLLBACK');
+
+    if (error?.code === '23505') {
+      throw createError('You have already voted on this market', 409);
+    }
+
     throw error;
   } finally {
     client.release();

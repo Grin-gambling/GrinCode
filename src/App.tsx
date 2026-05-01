@@ -1,14 +1,12 @@
 import { useEffect, useState, type JSX } from "react";
-import './App.css'
+import "./App.css";
 import banner from "./components/gambling-banner.jpg";
-import Button from './button';
-import Post from './betPost';
+import Button from "./button";
+import Post from "./betPost";
 import Leaderboard from "./Leaderboard";
 import Currency from "./Currency";
-
 import Login from "./Login";
 import Register from "./Registration";
-
 
 type BetPost = {
   id: string;
@@ -32,6 +30,16 @@ type ApiMarketRow = {
   total_amount: number | string;
   end_time?: string;
 };
+
+type AuthUser = {
+  id: string;
+  username: string;
+  email: string;
+  balance: number;
+  created_at: string;
+};
+
+const AUTH_TOKEN_STORAGE_KEY = "grincodeAuthToken";
 
 function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
   const groupedMarkets = new Map<
@@ -97,8 +105,6 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
 
 }
 
-
-
 const fakePlayers = [
   { id: "1", name: "Mina", balance: 1000 },
   { id: "2", name: "Lucas", balance: 0 },
@@ -106,10 +112,7 @@ const fakePlayers = [
   { id: "4", name: "Youssef", balance: 0 },
 ];
 
-const currentUser = fakePlayers[0];
-
 export default function App(): JSX.Element {
-
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [newEndTime, setNewEndTime] = useState("");
@@ -158,6 +161,49 @@ export default function App(): JSX.Element {
     void loadMarkets();
   }, []);
 
+  useEffect(() => {
+    if (!authToken) {
+      setCurrentLoggedInUser(null);
+      return;
+    }
+
+    let isActive = true;
+
+    const loadCurrentUser = async () => {
+      try {
+        const response = await fetch("/api/auth/me", {
+          headers: getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+          localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+
+          if (isActive) {
+            setAuthToken(null);
+            setCurrentLoggedInUser(null);
+          }
+          return;
+        }
+
+        const responseBody = await response.json();
+
+        if (isActive) {
+          setCurrentLoggedInUser(responseBody.user);
+        }
+      } catch {
+        if (isActive) {
+          setCurrentLoggedInUser(null);
+        }
+      }
+    };
+
+    void loadCurrentUser();
+
+    return () => {
+      isActive = false;
+    };
+  }, [authToken]);
+
   const placeBet = async (
     marketId: string,
     outcomeId: string,
@@ -180,6 +226,59 @@ export default function App(): JSX.Element {
     }
 
     await loadMarkets();
+  };
+
+  const castVote = async (marketId: string, voteType: "up" | "down") => {
+    if (!authToken) {
+      throw new Error("Please log in to vote");
+    }
+
+    const response = await fetch(`/api/markets/${marketId}/votes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ voteType }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.error || "Failed to submit vote");
+    }
+
+    await loadMarkets();
+  };
+
+  const loadComments = async (marketId: string): Promise<MarketComment[]> => {
+    const response = await fetch(`/api/markets/${marketId}/comments`);
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.error || "Failed to load comments");
+    }
+
+    return response.json();
+  };
+
+  const addComment = async (
+    marketId: string,
+    body: string
+  ): Promise<MarketComment> => {
+    const response = await fetch(`/api/markets/${marketId}/comments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ body }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.error || "Failed to post comment");
+    }
+
+    return response.json();
   };
 
   const handleCreatePost = async () => {
@@ -222,15 +321,28 @@ export default function App(): JSX.Element {
     }
   };
 
+  const handleLogout = () => {
+    if (!authToken) {
+      setCurrentLoggedInUser(null);
+      return;
+    }
+
+    void fetch("/api/auth/logout", {
+      method: "POST",
+      headers: getAuthHeaders(),
+    }).finally(() => {
+      localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+      setAuthToken(null);
+      setCurrentLoggedInUser(null);
+    });
+  };
+
   return (
     <div>
       <div className="banner">
-        <img
-          src={banner}
-          alt="Website Banner"
-        />
+        <img src={banner} alt="Website Banner" />
         <h1>G R I N G A M B L I N G</h1>
-        <Currency balance={currentUser.balance} />
+        <Currency balance={currentLoggedInUser?.balance ?? 0} />
       </div>
 
       <div className="button-area">
@@ -249,13 +361,15 @@ export default function App(): JSX.Element {
           textColor={textcolor}
           fontSize={fontSize}
           pillShape
-          onClick={() => {    if (currentLoggedInUser) {
-            setCurrentLoggedInUser(null);
-          } else {
-            setShowLoginModal(true);
-          }}}
+          onClick={() => {
+            if (currentLoggedInUser) {
+              handleLogout();
+            } else {
+              setShowLoginModal(true);
+            }
+          }}
         >
-          {currentLoggedInUser ? "Log Out" : "Login"}
+          {currentLoggedInUser ? `Log Out (${currentLoggedInUser.username})` : "Login"}
         </Button>
 
         <Button
@@ -268,25 +382,6 @@ export default function App(): JSX.Element {
           Sign up
         </Button>
       </div>
-
-      {/* <div>
-      <Login />
-    </div> */}
-
-
-    {/* Uncomment if we end up using pass time button */}
-      {/* <div className="button-area">
-        <Button
-          backgroundColor="#000000"
-          textColor={textcolor}
-          fontSize={fontSize}
-          pillShape
-          width="150px"
-          onClick={() => setStartAllTimers(true)}
-        >
-          Pass Time
-        </Button>
-      </div> */}
 
       {errorMessage && <p>{errorMessage}</p>}
       {isLoading && <p>Loading markets...</p>}
@@ -361,6 +456,7 @@ export default function App(): JSX.Element {
               display: "flex",
               flexDirection: "column",
               gap: "10px",
+              border: "4px solid #DA291C",
             }}
           >
             <h2 style={{ margin: 0 }}>Create Bet</h2>
@@ -439,13 +535,15 @@ export default function App(): JSX.Element {
         >
           <div onClick={(e) => e.stopPropagation()}>
             <Login
-              backgroundColor = "white"
-              textColor = {textcolor}
-              fontSize = {fontSize}
+              backgroundColor="white"
+              textColor={textcolor}
+              fontSize={fontSize}
               isOpen={showLoginModal}
               onClose={() => setShowLoginModal(false)}
-              onLoginSuccess={(name) => {          // ✅ add this
-                setCurrentLoggedInUser(name);
+              onLoginSuccess={(token, user) => {
+                localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+                setAuthToken(token);
+                setCurrentLoggedInUser(user);
                 setShowLoginModal(false);
               }}
             />
@@ -471,17 +569,20 @@ export default function App(): JSX.Element {
         >
           <div onClick={(e) => e.stopPropagation()}>
             <Register
-              backgroundColor = "white"
-              textColor = {textcolor}
-              fontSize = {fontSize}
+              backgroundColor="white"
+              textColor={textcolor}
+              fontSize={fontSize}
               isOpen={showRegisterModal}
               onClose={() => setShowRegisterModal(false)}
+              onRegisterSuccess={(token, user) => {
+                localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+                setAuthToken(token);
+                setCurrentLoggedInUser(user);
+              }}
             />
           </div>
         </div>
       )}
     </div>
-
-    
   );
 }
