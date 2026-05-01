@@ -20,6 +20,7 @@ type BetPost = {
   rightOutcomeId: string;
   rightLabel: string;
   rightTotal: number;
+  endTime?: string;
 };
 
 type ApiMarketRow = {
@@ -29,6 +30,7 @@ type ApiMarketRow = {
   outcome_id: string;
   label: string;
   total_amount: number | string;
+  end_time?: string;
 };
 
 function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
@@ -38,6 +40,7 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
       id: string;
       title: string;
       content: string;
+      endTime?: string;
       outcomes: Array<{
         id: string;
         label: string;
@@ -62,6 +65,7 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
       id: row.id,
       title: row.question,
       content: row.description,
+      endTime: row.end_time,
       outcomes: [
         {
           id: row.outcome_id,
@@ -73,26 +77,24 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
   }
 
   return Array.from(groupedMarkets.values())
-    .map((market) => {
-      if (market.outcomes.length < 2) {
-        return null;
-      }
+  .filter((market) => market.outcomes.length >= 2)
+  .map((market) => {
+    const [leftOutcome, rightOutcome] = market.outcomes;
+    return {
+      id: market.id,
+      title: market.title,
+      content: market.content,
+      leftOutcomeId: leftOutcome.id,
+      leftLabel: leftOutcome.label,
+      leftTotal: leftOutcome.totalAmount,
+      rightOutcomeId: rightOutcome.id,
+      rightLabel: rightOutcome.label,
+      rightTotal: rightOutcome.totalAmount,
+      endTime: market.endTime,
+    };
+  });
 
-      const [leftOutcome, rightOutcome] = market.outcomes;
 
-      return {
-        id: market.id,
-        title: market.title,
-        content: market.content,
-        leftOutcomeId: leftOutcome.id,
-        leftLabel: leftOutcome.label,
-        leftTotal: leftOutcome.totalAmount,
-        rightOutcomeId: rightOutcome.id,
-        rightLabel: rightOutcome.label,
-        rightTotal: rightOutcome.totalAmount,
-      };
-    })
-    .filter((market): market is BetPost => market !== null);
 }
 
 
@@ -110,6 +112,7 @@ export default function App(): JSX.Element {
 
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [newEndTime, setNewEndTime] = useState("");
 
   const [currentLoggedInUser, setCurrentLoggedInUser] = useState<string | null>(null);
 
@@ -128,8 +131,6 @@ export default function App(): JSX.Element {
   const [newContent, setNewContent] = useState("");
   const [newLeft, setNewLeft] = useState("");
   const [newRight, setNewRight] = useState("");
-
-  const [startAllTimers, setStartAllTimers] = useState(false);
 
   const loadMarkets = async () => {
     try {
@@ -197,6 +198,7 @@ export default function App(): JSX.Element {
           description: newContent,
           outcome1: newLeft,
           outcome2: newRight,
+          endTime: newEndTime || null,
         }),
       });
 
@@ -209,6 +211,7 @@ export default function App(): JSX.Element {
       setNewContent("");
       setNewLeft("");
       setNewRight("");
+      setNewEndTime("");
       setShowCreateModal(false);
 
       await loadMarkets();
@@ -310,7 +313,7 @@ export default function App(): JSX.Element {
         rightLabel={post.rightLabel}
         rightTotal={post.rightTotal}
         onPlaceBet={placeBet}
-        startAllTimers={startAllTimers}
+        endTime={post.endTime}
       />
     ))}
   </div>
@@ -391,6 +394,17 @@ export default function App(): JSX.Element {
               placeholder="Right option"
               value={newRight}
               onChange={(e) => setNewRight(e.target.value)}
+              style={{ padding: "8px" }}
+            />
+
+            <label style={{ fontSize: "14px", fontWeight: "bold", color: "#333" }}>
+              Bet ends at:
+            </label>
+            <input
+              type="datetime-local"
+              value={newEndTime}
+              onChange={(e) => setNewEndTime(e.target.value)}
+              min={new Date().toISOString().slice(0, 16)}
               style={{ padding: "8px" }}
             />
 

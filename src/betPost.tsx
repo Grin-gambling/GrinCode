@@ -18,8 +18,7 @@ type postProps = {
     rightLabel: string;
     rightTotal: number;
     onPlaceBet: (marketId: string, outcomeId: string, amount: number) => Promise<void>;
-    startAllTimers: boolean;
-
+    endTime?: string;
     
     // children?: React.ReactNode;
 };
@@ -40,13 +39,12 @@ rightOutcomeId,
 rightLabel,
 rightTotal,
 onPlaceBet,
-startAllTimers,
+endTime,
 
 }: postProps) {
   const [votes, setVotes] = useState(0);
 
 
-  // const [timeLeft, setTimeLeft] = useState(10);
   
   const [showComments, setShowComments] = useState(false);
 
@@ -55,7 +53,7 @@ startAllTimers,
   const [showPopup, setShowPopup] = useState(false);
   const [hasEnded, setHasEnded] = useState(false);
 
-  const [timeLeft, setTimeLeft] = useState(5);
+
   const [timerStarted, setTimerStarted] = useState(false);
 
 
@@ -81,31 +79,23 @@ startAllTimers,
     }
   }, [showModal, selectedSide]);
 
-  useEffect(() => {
-    if (startAllTimers) {
-      setTimerStarted(true);
-    }
-  }, [startAllTimers]);
 
 
-  useEffect(() => {
-    if (!timerStarted) return;
-    if (timeLeft <= 0) {
-      if (!hasEnded) {
-        setShowPopup(true);
-        setHasEnded(true);
-      }
-      return;
-    }
+
+
+  // Compute seconds remaining from closeTime, or fall back to 0
+  const computeSecondsLeft = () => {
+    if (!endTime) return 0;
+    return Math.max(0, Math.floor((new Date(endTime).getTime() - Date.now()) / 1000));
+  };
+
+
+  const [timeLeft, setTimeLeft] = useState(computeSecondsLeft);
+
+
+
+
   
-    const interval = setInterval(() => {
-      setTimeLeft((t) => t - 1);
-    }, 1000);
-  
-    return () => clearInterval(interval);
-  }, [timerStarted, timeLeft, hasEnded]);
-
-
   const selectedLabel =
   selectedSide === "yes"
     ? leftLabel
@@ -121,6 +111,26 @@ startAllTimers,
   const noPercent = total === 0 ? 50 : (noTotal / total) * 100;
 
 
+  const formatTimeLeft = () => {
+    const secondsLeft = Math.max(0, Math.floor((new Date(endTime!).getTime() - Date.now()) / 1000));
+    if (secondsLeft <= 0) return "Betting ended";
+    const days = Math.floor(secondsLeft / 86400);
+    const hours = Math.floor((secondsLeft % 86400) / 3600);
+    const minutes = Math.floor((secondsLeft % 3600) / 60);
+    const seconds = secondsLeft % 60;
+    if (days > 0) return `${days}d ${hours}h left`;
+    if (hours > 0) return `${hours}h ${minutes}m left`;
+    if (minutes > 0) return `${minutes}m ${seconds}s left`;
+    return `${seconds}s left`;
+  };
+
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  
   const styles = {
 card: {
   border: "4px solid #DA291C",
@@ -175,11 +185,26 @@ card: {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <h3 style={{ margin: 0 }}>{title}</h3>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontFamily: "Futura", fontSize: "14px", fontWeight: "bold" }}>
-            Time left in bet:  {timeLeft > 0 ? `${timeLeft}s` : "Over"}
-          </div>
+     
 
+        <div style={{ textAlign: "right" }}>
+          {endTime ? (
+            <>
+              <div style={{ fontFamily: "Futura", fontSize: "13px", color: "#555" }}>
+                Ends: {new Date(endTime).toLocaleString([], {
+                  month: "short", day: "numeric",
+                  hour: "2-digit", minute: "2-digit"
+                })}
+              </div>
+              <div style={{ fontFamily: "Futura", fontSize: "13px", fontWeight: "bold", color: hasEnded ? "#DA291C" : "#333", marginTop: "2px" }}>
+                {hasEnded ? "⛔ Betting ended" : `⏳ ${formatTimeLeft()}`}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontFamily: "Futura", fontSize: "13px", color: "#999" }}>
+              No end time set
+            </div>
+          )}
         </div>
 
 
@@ -363,7 +388,11 @@ card: {
   
   {/* LEFT OPTION */}
   <div
-    onClick={() => setSelectedSide("yes")}
+    onClick={() => {
+      if (hasEnded) return; 
+      setSelectedSide("yes");
+      setShowModal(true);
+    }}
     style={{
       flex: 1,
       padding: "10px",
@@ -381,7 +410,11 @@ card: {
 
   {/* RIGHT OPTION */}
   <div
-    onClick={() => setSelectedSide("no")}
+    onClick={() => {
+      if (hasEnded) return;
+      setSelectedSide("no");
+      setShowModal(true);
+    }}
     style={{
       flex: 1,
       padding: "10px",
@@ -501,7 +534,7 @@ card: {
         color: "white",
       }}
     >
-      ⏰ Time is up — betting is now closed!
+      ⏰ Time is up — betting is now over!
     </div>
   </div>
 )}
