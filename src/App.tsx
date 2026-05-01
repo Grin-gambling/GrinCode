@@ -18,7 +18,15 @@ type BetPost = {
   rightOutcomeId: string;
   rightLabel: string;
   rightTotal: number;
-  endTime?: string;
+  upvotes: number;
+  downvotes: number;
+};
+
+export type MarketComment = {
+  id: string;
+  market_id: string;
+  body: string;
+  created_at: string;
 };
 
 type ApiMarketRow = {
@@ -28,7 +36,8 @@ type ApiMarketRow = {
   outcome_id: string;
   label: string;
   total_amount: number | string;
-  end_time?: string;
+  total_upvotes: number | string;
+  total_downvotes: number | string;
 };
 
 type AuthUser = {
@@ -48,7 +57,8 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
       id: string;
       title: string;
       content: string;
-      endTime?: string;
+      upvotes: number;
+      downvotes: number;
       outcomes: Array<{
         id: string;
         label: string;
@@ -73,7 +83,8 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
       id: row.id,
       title: row.question,
       content: row.description,
-      endTime: row.end_time,
+      upvotes: Number(row.total_upvotes),
+      downvotes: Number(row.total_downvotes),
       outcomes: [
         {
           id: row.outcome_id,
@@ -85,24 +96,28 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
   }
 
   return Array.from(groupedMarkets.values())
-  .filter((market) => market.outcomes.length >= 2)
-  .map((market) => {
-    const [leftOutcome, rightOutcome] = market.outcomes;
-    return {
-      id: market.id,
-      title: market.title,
-      content: market.content,
-      leftOutcomeId: leftOutcome.id,
-      leftLabel: leftOutcome.label,
-      leftTotal: leftOutcome.totalAmount,
-      rightOutcomeId: rightOutcome.id,
-      rightLabel: rightOutcome.label,
-      rightTotal: rightOutcome.totalAmount,
-      endTime: market.endTime,
-    };
-  });
+    .map((market) => {
+      if (market.outcomes.length < 2) {
+        return null;
+      }
 
+      const [leftOutcome, rightOutcome] = market.outcomes;
 
+      return {
+        id: market.id,
+        title: market.title,
+        content: market.content,
+        leftOutcomeId: leftOutcome.id,
+        leftLabel: leftOutcome.label,
+        leftTotal: leftOutcome.totalAmount,
+        rightOutcomeId: rightOutcome.id,
+        rightLabel: rightOutcome.label,
+        rightTotal: rightOutcome.totalAmount,
+        upvotes: market.upvotes,
+        downvotes: market.downvotes,
+      };
+    })
+    .filter((market): market is BetPost => market !== null);
 }
 
 const fakePlayers = [
@@ -115,11 +130,10 @@ const fakePlayers = [
 export default function App(): JSX.Element {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [newEndTime, setNewEndTime] = useState("");
-
-  const [currentLoggedInUser, setCurrentLoggedInUser] = useState<string | null>(null);
-
-
+  const [authToken, setAuthToken] = useState<string | null>(
+    localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+  );
+  const [currentLoggedInUser, setCurrentLoggedInUser] = useState<AuthUser | null>(null);
 
   const backgroundColor = "#DA291C";
   const textcolor = "white";
@@ -134,6 +148,18 @@ export default function App(): JSX.Element {
   const [newContent, setNewContent] = useState("");
   const [newLeft, setNewLeft] = useState("");
   const [newRight, setNewRight] = useState("");
+
+  const [startAllTimers] = useState(false);
+
+  const getAuthHeaders = (): Record<string, string> => {
+    if (!authToken) {
+      return {};
+    }
+
+    return {
+      Authorization: `Bearer ${authToken}`,
+    };
+  };
 
   const loadMarkets = async () => {
     try {
@@ -297,7 +323,6 @@ export default function App(): JSX.Element {
           description: newContent,
           outcome1: newLeft,
           outcome2: newRight,
-          endTime: newEndTime || null,
         }),
       });
 
@@ -310,7 +335,6 @@ export default function App(): JSX.Element {
       setNewContent("");
       setNewLeft("");
       setNewRight("");
-      setNewEndTime("");
       setShowCreateModal(false);
 
       await loadMarkets();
@@ -387,49 +411,51 @@ export default function App(): JSX.Element {
       {isLoading && <p>Loading markets...</p>}
 
       <div>
-<div style={{ display: "flex" }}>
+        <div style={{ display: "flex" }}>
+          <div style={{ flex: 1 }}>
+            {posts.map((post) => (
+              <Post
+                key={post.id}
+                backgroundColor={backgroundColor}
+                textColor={textcolor}
+                fontSize={fontSize}
+                pillShape
+                marketId={post.id}
+                title={post.title}
+                content={post.content}
+                leftOutcomeId={post.leftOutcomeId}
+                leftLabel={post.leftLabel}
+                leftTotal={post.leftTotal}
+                rightOutcomeId={post.rightOutcomeId}
+                rightLabel={post.rightLabel}
+                rightTotal={post.rightTotal}
+                upvotes={post.upvotes}
+                downvotes={post.downvotes}
+                onPlaceBet={placeBet}
+                onVote={castVote}
+                onLoadComments={loadComments}
+                onAddComment={addComment}
+                startAllTimers={startAllTimers}
+              />
+            ))}
+          </div>
 
-  {/* LEFT SIDE: Bets feed */}
-  <div style={{ flex: 1 }}>
-    {posts.map((post) => (
-      <Post
-        key={post.id}
-        backgroundColor={backgroundColor}
-        textColor={textcolor}
-        fontSize={fontSize}
-        pillShape
-        marketId={post.id}
-        title={post.title}
-        content={post.content}
-        leftOutcomeId={post.leftOutcomeId}
-        leftLabel={post.leftLabel}
-        leftTotal={post.leftTotal}
-        rightOutcomeId={post.rightOutcomeId}
-        rightLabel={post.rightLabel}
-        rightTotal={post.rightTotal}
-        onPlaceBet={placeBet}
-        endTime={post.endTime}
-      />
-    ))}
-  </div>
+          <div
+            style={{
+              width: "250px",
+              border: "4px solid #DA291C",
+              padding: "15px",
+              borderRadius: "8px",
+              marginLeft: "10px",
+              marginTop: "20px",
+              marginRight: "20px",
+            }}
+          >
+            <Leaderboard players={fakePlayers} />
+          </div>
+        </div>
+      </div>
 
-  {/* RIGHT SIDE: Leaderboard */}
-  <div
-    style={{
-      width: "250px",
-      border: "4px solid #DA291C",
-      padding: "15px",
-      borderRadius: "8px",
-      marginLeft: "10px",
-      marginTop: "20px",
-      marginRight: "20px",
-    }}
-  >
-    <Leaderboard players={fakePlayers} />
-  </div>
-
-</div>
-</div>
       {showCreateModal && (
         <div
           onClick={() => setShowCreateModal(false)}
@@ -490,17 +516,6 @@ export default function App(): JSX.Element {
               placeholder="Right option"
               value={newRight}
               onChange={(e) => setNewRight(e.target.value)}
-              style={{ padding: "8px" }}
-            />
-
-            <label style={{ fontSize: "14px", fontWeight: "bold", color: "#333" }}>
-              Bet ends at:
-            </label>
-            <input
-              type="datetime-local"
-              value={newEndTime}
-              onChange={(e) => setNewEndTime(e.target.value)}
-              min={new Date().toISOString().slice(0, 16)}
               style={{ padding: "8px" }}
             />
 
