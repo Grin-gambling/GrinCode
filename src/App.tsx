@@ -1,12 +1,14 @@
 import { useEffect, useState, type JSX } from "react";
-import "./App.css";
+import './App.css'
 import banner from "./components/gambling-banner.jpg";
-import Button from "./button";
-import Post from "./betPost";
+import Button from './button';
+import Post from './betPost';
 import Leaderboard from "./Leaderboard";
 import Currency from "./Currency";
+
 import Login from "./Login";
 import Register from "./Registration";
+
 
 type BetPost = {
   id: string;
@@ -18,15 +20,7 @@ type BetPost = {
   rightOutcomeId: string;
   rightLabel: string;
   rightTotal: number;
-  upvotes: number;
-  downvotes: number;
-};
-
-export type MarketComment = {
-  id: string;
-  market_id: string;
-  body: string;
-  created_at: string;
+  endTime?: string;
 };
 
 type ApiMarketRow = {
@@ -36,19 +30,8 @@ type ApiMarketRow = {
   outcome_id: string;
   label: string;
   total_amount: number | string;
-  total_upvotes: number | string;
-  total_downvotes: number | string;
+  end_time?: string;
 };
-
-type AuthUser = {
-  id: string;
-  username: string;
-  email: string;
-  balance: number;
-  created_at: string;
-};
-
-const AUTH_TOKEN_STORAGE_KEY = "grincodeAuthToken";
 
 function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
   const groupedMarkets = new Map<
@@ -57,8 +40,7 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
       id: string;
       title: string;
       content: string;
-      upvotes: number;
-      downvotes: number;
+      endTime?: string;
       outcomes: Array<{
         id: string;
         label: string;
@@ -83,8 +65,7 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
       id: row.id,
       title: row.question,
       content: row.description,
-      upvotes: Number(row.total_upvotes),
-      downvotes: Number(row.total_downvotes),
+      endTime: row.end_time,
       outcomes: [
         {
           id: row.outcome_id,
@@ -96,29 +77,27 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
   }
 
   return Array.from(groupedMarkets.values())
-    .map((market) => {
-      if (market.outcomes.length < 2) {
-        return null;
-      }
+  .filter((market) => market.outcomes.length >= 2)
+  .map((market) => {
+    const [leftOutcome, rightOutcome] = market.outcomes;
+    return {
+      id: market.id,
+      title: market.title,
+      content: market.content,
+      leftOutcomeId: leftOutcome.id,
+      leftLabel: leftOutcome.label,
+      leftTotal: leftOutcome.totalAmount,
+      rightOutcomeId: rightOutcome.id,
+      rightLabel: rightOutcome.label,
+      rightTotal: rightOutcome.totalAmount,
+      endTime: market.endTime,
+    };
+  });
 
-      const [leftOutcome, rightOutcome] = market.outcomes;
 
-      return {
-        id: market.id,
-        title: market.title,
-        content: market.content,
-        leftOutcomeId: leftOutcome.id,
-        leftLabel: leftOutcome.label,
-        leftTotal: leftOutcome.totalAmount,
-        rightOutcomeId: rightOutcome.id,
-        rightLabel: rightOutcome.label,
-        rightTotal: rightOutcome.totalAmount,
-        upvotes: market.upvotes,
-        downvotes: market.downvotes,
-      };
-    })
-    .filter((market): market is BetPost => market !== null);
 }
+
+
 
 const fakePlayers = [
   { id: "1", name: "Mina", balance: 1000 },
@@ -127,13 +106,17 @@ const fakePlayers = [
   { id: "4", name: "Youssef", balance: 0 },
 ];
 
+const currentUser = fakePlayers[0];
+
 export default function App(): JSX.Element {
+
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [authToken, setAuthToken] = useState<string | null>(
-    localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
-  );
-  const [currentLoggedInUser, setCurrentLoggedInUser] = useState<AuthUser | null>(null);
+  const [newEndTime, setNewEndTime] = useState("");
+
+  const [currentLoggedInUser, setCurrentLoggedInUser] = useState<string | null>(null);
+
+
 
   const backgroundColor = "#DA291C";
   const textcolor = "white";
@@ -148,18 +131,6 @@ export default function App(): JSX.Element {
   const [newContent, setNewContent] = useState("");
   const [newLeft, setNewLeft] = useState("");
   const [newRight, setNewRight] = useState("");
-
-  const [startAllTimers] = useState(false);
-
-  const getAuthHeaders = (): Record<string, string> => {
-    if (!authToken) {
-      return {};
-    }
-
-    return {
-      Authorization: `Bearer ${authToken}`,
-    };
-  };
 
   const loadMarkets = async () => {
     try {
@@ -187,49 +158,6 @@ export default function App(): JSX.Element {
     void loadMarkets();
   }, []);
 
-  useEffect(() => {
-    if (!authToken) {
-      setCurrentLoggedInUser(null);
-      return;
-    }
-
-    let isActive = true;
-
-    const loadCurrentUser = async () => {
-      try {
-        const response = await fetch("/api/auth/me", {
-          headers: getAuthHeaders(),
-        });
-
-        if (!response.ok) {
-          localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-
-          if (isActive) {
-            setAuthToken(null);
-            setCurrentLoggedInUser(null);
-          }
-          return;
-        }
-
-        const responseBody = await response.json();
-
-        if (isActive) {
-          setCurrentLoggedInUser(responseBody.user);
-        }
-      } catch {
-        if (isActive) {
-          setCurrentLoggedInUser(null);
-        }
-      }
-    };
-
-    void loadCurrentUser();
-
-    return () => {
-      isActive = false;
-    };
-  }, [authToken]);
-
   const placeBet = async (
     marketId: string,
     outcomeId: string,
@@ -254,59 +182,6 @@ export default function App(): JSX.Element {
     await loadMarkets();
   };
 
-  const castVote = async (marketId: string, voteType: "up" | "down") => {
-    if (!authToken) {
-      throw new Error("Please log in to vote");
-    }
-
-    const response = await fetch(`/api/markets/${marketId}/votes`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeaders(),
-      },
-      body: JSON.stringify({ voteType }),
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => null);
-      throw new Error(errorBody?.error || "Failed to submit vote");
-    }
-
-    await loadMarkets();
-  };
-
-  const loadComments = async (marketId: string): Promise<MarketComment[]> => {
-    const response = await fetch(`/api/markets/${marketId}/comments`);
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => null);
-      throw new Error(errorBody?.error || "Failed to load comments");
-    }
-
-    return response.json();
-  };
-
-  const addComment = async (
-    marketId: string,
-    body: string
-  ): Promise<MarketComment> => {
-    const response = await fetch(`/api/markets/${marketId}/comments`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ body }),
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => null);
-      throw new Error(errorBody?.error || "Failed to post comment");
-    }
-
-    return response.json();
-  };
-
   const handleCreatePost = async () => {
     if (!newTitle || !newContent || !newLeft || !newRight) return;
 
@@ -323,6 +198,7 @@ export default function App(): JSX.Element {
           description: newContent,
           outcome1: newLeft,
           outcome2: newRight,
+          endTime: newEndTime || null,
         }),
       });
 
@@ -335,6 +211,7 @@ export default function App(): JSX.Element {
       setNewContent("");
       setNewLeft("");
       setNewRight("");
+      setNewEndTime("");
       setShowCreateModal(false);
 
       await loadMarkets();
@@ -345,28 +222,15 @@ export default function App(): JSX.Element {
     }
   };
 
-  const handleLogout = () => {
-    if (!authToken) {
-      setCurrentLoggedInUser(null);
-      return;
-    }
-
-    void fetch("/api/auth/logout", {
-      method: "POST",
-      headers: getAuthHeaders(),
-    }).finally(() => {
-      localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-      setAuthToken(null);
-      setCurrentLoggedInUser(null);
-    });
-  };
-
   return (
     <div>
       <div className="banner">
-        <img src={banner} alt="Website Banner" />
+        <img
+          src={banner}
+          alt="Website Banner"
+        />
         <h1>G R I N G A M B L I N G</h1>
-        <Currency balance={currentLoggedInUser?.balance ?? 0} />
+        <Currency balance={currentUser.balance} />
       </div>
 
       <div className="button-area">
@@ -385,15 +249,13 @@ export default function App(): JSX.Element {
           textColor={textcolor}
           fontSize={fontSize}
           pillShape
-          onClick={() => {
-            if (currentLoggedInUser) {
-              handleLogout();
-            } else {
-              setShowLoginModal(true);
-            }
-          }}
+          onClick={() => {    if (currentLoggedInUser) {
+            setCurrentLoggedInUser(null);
+          } else {
+            setShowLoginModal(true);
+          }}}
         >
-          {currentLoggedInUser ? `Log out (${currentLoggedInUser.username})` : "Log in"}
+          {currentLoggedInUser ? `Log Out (${currentLoggedInUser})` : "Login"}
         </Button>
 
         <Button
@@ -407,55 +269,72 @@ export default function App(): JSX.Element {
         </Button>
       </div>
 
+      {/* <div>
+      <Login />
+    </div> */}
+
+
+    {/* Uncomment if we end up using pass time button */}
+      {/* <div className="button-area">
+        <Button
+          backgroundColor="#000000"
+          textColor={textcolor}
+          fontSize={fontSize}
+          pillShape
+          width="150px"
+          onClick={() => setStartAllTimers(true)}
+        >
+          Pass Time
+        </Button>
+      </div> */}
+
       {errorMessage && <p>{errorMessage}</p>}
       {isLoading && <p>Loading markets...</p>}
 
       <div>
-        <div style={{ display: "flex" }}>
-          <div style={{ flex: 1 }}>
-            {posts.map((post) => (
-              <Post
-                key={post.id}
-                backgroundColor={backgroundColor}
-                textColor={textcolor}
-                fontSize={fontSize}
-                pillShape
-                marketId={post.id}
-                title={post.title}
-                content={post.content}
-                leftOutcomeId={post.leftOutcomeId}
-                leftLabel={post.leftLabel}
-                leftTotal={post.leftTotal}
-                rightOutcomeId={post.rightOutcomeId}
-                rightLabel={post.rightLabel}
-                rightTotal={post.rightTotal}
-                upvotes={post.upvotes}
-                downvotes={post.downvotes}
-                onPlaceBet={placeBet}
-                onVote={castVote}
-                onLoadComments={loadComments}
-                onAddComment={addComment}
-                startAllTimers={startAllTimers}
-              />
-            ))}
-          </div>
+<div style={{ display: "flex" }}>
 
-          <div
-            style={{
-              width: "250px",
-              border: "4px solid #DA291C",
-              padding: "15px",
-              borderRadius: "8px",
-              marginLeft: "10px",
-              marginTop: "20px",
-              marginRight: "20px",
-            }}
-          >
-            <Leaderboard players={fakePlayers} />
-          </div>
-        </div>
-      </div>
+  {/* LEFT SIDE: Bets feed */}
+  <div style={{ flex: 1 }}>
+    {posts.map((post) => (
+      <Post
+        key={post.id}
+        backgroundColor={backgroundColor}
+        textColor={textcolor}
+        fontSize={fontSize}
+        pillShape
+        marketId={post.id}
+        title={post.title}
+        content={post.content}
+        leftOutcomeId={post.leftOutcomeId}
+        leftLabel={post.leftLabel}
+        leftTotal={post.leftTotal}
+        rightOutcomeId={post.rightOutcomeId}
+        rightLabel={post.rightLabel}
+        rightTotal={post.rightTotal}
+        onPlaceBet={placeBet}
+        endTime={post.endTime}
+      />
+    ))}
+  </div>
 
+  {/* RIGHT SIDE: Leaderboard */}
+  <div
+    style={{
+      width: "250px",
+      border: "4px solid #DA291C",
+      padding: "15px",
+      borderRadius: "8px",
+      marginLeft: "10px",
+      marginTop: "20px",
+      marginRight: "20px",
+    }}
+  >
+    <Leaderboard players={fakePlayers} />
+  </div>
+
+</div>
+</div>
       {showCreateModal && (
         <div
           onClick={() => setShowCreateModal(false)}
@@ -482,7 +361,6 @@ export default function App(): JSX.Element {
               display: "flex",
               flexDirection: "column",
               gap: "10px",
-              border: "4px solid #DA291C",
             }}
           >
             <h2 style={{ margin: 0 }}>Create Bet</h2>
@@ -519,6 +397,17 @@ export default function App(): JSX.Element {
               style={{ padding: "8px" }}
             />
 
+            <label style={{ fontSize: "14px", fontWeight: "bold", color: "#333" }}>
+              Bet ends at:
+            </label>
+            <input
+              type="datetime-local"
+              value={newEndTime}
+              onChange={(e) => setNewEndTime(e.target.value)}
+              min={new Date().toISOString().slice(0, 16)}
+              style={{ padding: "8px" }}
+            />
+
             <Button
               backgroundColor={backgroundColor}
               textColor={textcolor}
@@ -550,15 +439,13 @@ export default function App(): JSX.Element {
         >
           <div onClick={(e) => e.stopPropagation()}>
             <Login
-              backgroundColor="white"
-              textColor={textcolor}
-              fontSize={fontSize}
+              backgroundColor = "white"
+              textColor = {textcolor}
+              fontSize = {fontSize}
               isOpen={showLoginModal}
               onClose={() => setShowLoginModal(false)}
-              onLoginSuccess={(token, user) => {
-                localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
-                setAuthToken(token);
-                setCurrentLoggedInUser(user);
+              onLoginSuccess={(name) => {          // ✅ add this
+                setCurrentLoggedInUser(name);
                 setShowLoginModal(false);
               }}
             />
@@ -590,14 +477,15 @@ export default function App(): JSX.Element {
               isOpen={showRegisterModal}
               onClose={() => setShowRegisterModal(false)}
               onRegisterSuccess={(token, user) => {
-                localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
-                setAuthToken(token);
-                setCurrentLoggedInUser(user);
+                setCurrentLoggedInUser(user.username);
+                setShowRegisterModal(false);
               }}
             />
           </div>
         </div>
       )}
     </div>
+
+    
   );
 }
