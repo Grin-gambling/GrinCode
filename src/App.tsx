@@ -20,6 +20,15 @@ type BetPost = {
   rightOutcomeId: string;
   rightLabel: string;
   rightTotal: number;
+  upvotes: number;
+  downvotes: number;
+};
+
+export type MarketComment = {
+  id: string;
+  market_id: string;
+  body: string;
+  created_at: string;
 };
 
 type ApiMarketRow = {
@@ -29,6 +38,8 @@ type ApiMarketRow = {
   outcome_id: string;
   label: string;
   total_amount: number | string;
+  total_upvotes: number | string;
+  total_downvotes: number | string;
 };
 
 function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
@@ -38,6 +49,8 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
       id: string;
       title: string;
       content: string;
+      upvotes: number;
+      downvotes: number;
       outcomes: Array<{
         id: string;
         label: string;
@@ -62,6 +75,8 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
       id: row.id,
       title: row.question,
       content: row.description,
+      upvotes: Number(row.total_upvotes),
+      downvotes: Number(row.total_downvotes),
       outcomes: [
         {
           id: row.outcome_id,
@@ -90,6 +105,8 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
         rightOutcomeId: rightOutcome.id,
         rightLabel: rightOutcome.label,
         rightTotal: rightOutcome.totalAmount,
+        upvotes: market.upvotes,
+        downvotes: market.downvotes,
       };
     })
     .filter((market): market is BetPost => market !== null);
@@ -129,7 +146,7 @@ export default function App(): JSX.Element {
   const [newLeft, setNewLeft] = useState("");
   const [newRight, setNewRight] = useState("");
 
-  const [startAllTimers, setStartAllTimers] = useState(false);
+  const [startAllTimers] = useState(false);
 
   const loadMarkets = async () => {
     try {
@@ -179,6 +196,54 @@ export default function App(): JSX.Element {
     }
 
     await loadMarkets();
+  };
+
+  const castVote = async (marketId: string, voteType: "up" | "down") => {
+    const response = await fetch(`/api/markets/${marketId}/votes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ voteType }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.error || "Failed to submit vote");
+    }
+
+    await loadMarkets();
+  };
+
+  const loadComments = async (marketId: string): Promise<MarketComment[]> => {
+    const response = await fetch(`/api/markets/${marketId}/comments`);
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.error || "Failed to load comments");
+    }
+
+    return response.json();
+  };
+
+  const addComment = async (
+    marketId: string,
+    body: string
+  ): Promise<MarketComment> => {
+    const response = await fetch(`/api/markets/${marketId}/comments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ body }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.error || "Failed to post comment");
+    }
+
+    return response.json();
   };
 
   const handleCreatePost = async () => {
@@ -309,7 +374,12 @@ export default function App(): JSX.Element {
         rightOutcomeId={post.rightOutcomeId}
         rightLabel={post.rightLabel}
         rightTotal={post.rightTotal}
+        upvotes={post.upvotes}
+        downvotes={post.downvotes}
         onPlaceBet={placeBet}
+        onVote={castVote}
+        onLoadComments={loadComments}
+        onAddComment={addComment}
         startAllTimers={startAllTimers}
       />
     ))}
