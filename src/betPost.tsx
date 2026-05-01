@@ -70,6 +70,7 @@ export default function Post({
   const [hasLoadedComments, setHasLoadedComments] = useState(false);
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isSubmittingVote, setIsSubmittingVote] = useState(false);
+  const [voteError, setVoteError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -276,10 +277,15 @@ export default function Post({
           onClick={async () => {
             if (isSubmittingVote) return;
 
+            setVoteError("");
             setIsSubmittingVote(true);
 
             try {
               await onVote(marketId, "up");
+            } catch (error) {
+              setVoteError(
+                error instanceof Error ? error.message : "Failed to submit vote"
+              );
             } finally {
               setIsSubmittingVote(false);
             }
@@ -297,10 +303,15 @@ export default function Post({
           onClick={async () => {
             if (isSubmittingVote) return;
 
+            setVoteError("");
             setIsSubmittingVote(true);
 
             try {
               await onVote(marketId, "down");
+            } catch (error) {
+              setVoteError(
+                error instanceof Error ? error.message : "Failed to submit vote"
+              );
             } finally {
               setIsSubmittingVote(false);
             }
@@ -329,6 +340,8 @@ export default function Post({
           </Button>
         </div>
       </div>
+
+      {voteError && <p style={{ color: "#DA291C" }}>{voteError}</p>}
 
       {showComments && (
         <div style={styles.comments}>

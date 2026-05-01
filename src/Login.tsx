@@ -1,17 +1,19 @@
 import { useForm, type SubmitHandler } from "react-hook-form";
 import "./App.css";
 import { useState, type JSX } from "react";
-import Button from './button';
+import Button from "./button";
 
 type LoginFormData = {
   email: string;
   password: string;
 };
 
-type UserData = {
-  name: string;
+type AuthUser = {
+  id: string;
+  username: string;
   email: string;
-  password: string;
+  balance: number;
+  created_at: string;
 };
 
 type LoginProps = {
@@ -20,42 +22,48 @@ type LoginProps = {
   backgroundColor: string;
   textColor: string;
   fontSize: number;
-  onLoginSuccess: (name: string) => void;
+  onLoginSuccess: (token: string, user: AuthUser) => void;
 };
 
-function Login({ 
-    
-    isOpen, 
-    onClose,
-    backgroundColor,
-    textColor,
-    fontSize,
-    onLoginSuccess,
-
+function Login({
+  isOpen,
+  onClose,
+  backgroundColor,
+  textColor,
+  fontSize,
+  onLoginSuccess,
 }: LoginProps): JSX.Element {
+  const [errorMessage, setErrorMessage] = useState("");
 
-const [errorMessage, setErrorMessage] = useState("");
-    
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<LoginFormData>();
 
-  const onSubmit: SubmitHandler<LoginFormData> = (data) => {
-    const storedUser = localStorage.getItem(data.email);
+  const onSubmit: SubmitHandler<LoginFormData> = async (data) => {
+    setErrorMessage("");
 
-    if (storedUser) {
-      const userData: UserData = JSON.parse(storedUser);
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
 
-      if (userData.password === data.password) {
-        console.log(`${userData.name} You Are Successfully Logged In`);
-        onLoginSuccess(userData.name);
-      } else {
-        setErrorMessage("Email or password is incorrect.");  
+      const responseBody = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(responseBody?.error || "Login failed");
       }
-    } else {
-      setErrorMessage("No account found with that email."); 
+
+      onLoginSuccess(responseBody.token, responseBody.user);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Login failed"
+      );
     }
   };
 
@@ -64,39 +72,37 @@ const [errorMessage, setErrorMessage] = useState("");
   return (
     <div className="modal-overlay">
       <div
-  className="modal-box"
-  style={{
-    backgroundColor,
-    width: "400px",
-    height: "350px",
-    display: "flex",
-    flexDirection: "column",
-    padding: "20px",
-    borderRadius: "10px",
-    border: "4px solid #DA291C",
-    position: "relative",
-    justifyContent: "flex-start"
-  }}
->
+        className="modal-box"
+        style={{
+          backgroundColor,
+          width: "400px",
+          height: "400px",
+          display: "flex",
+          flexDirection: "column",
+          padding: "20px",
+          borderRadius: "10px",
+          position: "relative",
+          justifyContent: "space-between",
+        }}
+      >
         <div>
-        <Button
-          backgroundColor="#ffffff"
-          textColor="00000"
-          fontSize={30}
-          pillShape
-          onClick={onClose}
-        >
-          ×
-        </Button>
-      </div>
+          <Button
+            backgroundColor="BLACK"
+            textColor={textColor}
+            fontSize={fontSize}
+            pillShape
+            onClick={onClose}
+          >
+            X
+          </Button>
+        </div>
 
         <h2 style={{ textAlign: "center", fontFamily: "Futura, sans-serif" }}>
           Welcome back!
         </h2>
 
-
-              {errorMessage && (
-                  < span style={{ color: "red", fontSize: "14px" }}>{errorMessage}</span>
+        {errorMessage && (
+          <span style={{ color: "red", fontSize: "14px" }}>{errorMessage}</span>
         )}
 
         <form className="App" onSubmit={handleSubmit(onSubmit)}>
@@ -118,18 +124,14 @@ const [errorMessage, setErrorMessage] = useState("");
             <span style={{ color: "red" }}>*Password* is mandatory</span>
           )}
 
-          <Button
-            backgroundColor="#DA291C"
-            textColor="white"
-            pillShape
-            fontSize={20}
-            onClick={handleSubmit(onSubmit)}
-          >
-            Log in
-          </Button>
+          <input
+            type="submit"
+            value={isSubmitting ? "Logging in..." : "Login"}
+            style={{ backgroundColor: "#a1eafb" }}
+          />
         </form>
       </div>
-      </div>
+    </div>
   );
 }
 
