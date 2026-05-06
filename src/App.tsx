@@ -1,14 +1,12 @@
 import { useEffect, useState, type JSX } from "react";
-import './App.css'
+import "./App.css";
 import banner from "./components/gambling-banner.jpg";
-import Button from './button';
-import Post from './betPost';
+import Button from "./button";
+import Post from "./betPost";
 import Leaderboard from "./Leaderboard";
 import Currency from "./Currency";
-
 import Login from "./Login";
 import Register from "./Registration";
-
 
 type BetPost = {
   id: string;
@@ -21,7 +19,15 @@ type BetPost = {
   rightOutcomeId: string;
   rightLabel: string;
   rightTotal: number;
-  endTime?: string;
+  upvotes: number;
+  downvotes: number;
+};
+
+export type MarketComment = {
+  id: string;
+  market_id: string;
+  body: string;
+  created_at: string;
 };
 
 type ApiMarketRow = {
@@ -32,8 +38,25 @@ type ApiMarketRow = {
   outcome_id: string;
   label: string;
   total_amount: number | string;
-  end_time?: string;
+  total_upvotes: number | string;
+  total_downvotes: number | string;
 };
+
+type AuthUser = {
+  id: string;
+  username: string;
+  email: string;
+  balance: number;
+  created_at: string;
+};
+
+type LeaderboardUser = {
+  id: string;
+  username: string;
+  balance: number | string;
+};
+
+const AUTH_TOKEN_STORAGE_KEY = "grincodeAuthToken";
 
 function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
   const groupedMarkets = new Map<
@@ -42,7 +65,9 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
       id: string;
       title: string;
       content: string;
-      endTime?: string;
+      closesAt: string;
+      upvotes: number;
+      downvotes: number;
       outcomes: Array<{
         id: string;
         label: string;
@@ -67,7 +92,9 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
       id: row.id,
       title: row.question,
       content: row.description,
-      endTime: row.end_time,
+      closesAt: row.closes_at,
+      upvotes: Number(row.total_upvotes),
+      downvotes: Number(row.total_downvotes),
       outcomes: [
         {
           id: row.outcome_id,
@@ -79,51 +106,38 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
   }
 
   return Array.from(groupedMarkets.values())
-  .filter((market) => market.outcomes.length >= 2)
-  .map((market) => {
-    const [leftOutcome, rightOutcome] = market.outcomes;
-    return {
-      id: market.id,
-      title: market.title,
-      content: market.content,
-      leftOutcomeId: leftOutcome.id,
-      leftLabel: leftOutcome.label,
-      leftTotal: leftOutcome.totalAmount,
-      rightOutcomeId: rightOutcome.id,
-      rightLabel: rightOutcome.label,
-      rightTotal: rightOutcome.totalAmount,
-      endTime: market.endTime,
-    };
-  });
+    .map((market) => {
+      if (market.outcomes.length < 2) {
+        return null;
+      }
 
+      const [leftOutcome, rightOutcome] = market.outcomes;
 
+      return {
+        id: market.id,
+        title: market.title,
+        content: market.content,
+        closesAt: market.closesAt,
+        leftOutcomeId: leftOutcome.id,
+        leftLabel: leftOutcome.label,
+        leftTotal: leftOutcome.totalAmount,
+        rightOutcomeId: rightOutcome.id,
+        rightLabel: rightOutcome.label,
+        rightTotal: rightOutcome.totalAmount,
+        upvotes: market.upvotes,
+        downvotes: market.downvotes,
+      };
+    })
+    .filter((market): market is BetPost => market !== null);
 }
 
-
-
-const fakePlayers = [
-  { id: "1", name: "Mina", balance: 1000 },
-  { id: "2", name: "Lucas", balance: 750 },
-  { id: "3", name: "Sam", balance: 100 },
-  { id: "4", name: "Youssef", balance: 100 },
-];
-
-const currentUser = fakePlayers[0];
-
 export default function App(): JSX.Element {
-
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
-  const [newEndTime, setNewEndTime] = useState("");
-
-  const [currentLoggedInUser, setCurrentLoggedInUser] = useState<string | null>(null);
-
-
-
-  const backgroundColor = "#DA291C";
-  const textcolor = "white";
-  const fontSize = 18;
-
+  const [authToken, setAuthToken] = useState<string | null>(
+    localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+  );
+  const [currentLoggedInUser, setCurrentLoggedInUser] = useState<AuthUser | null>(null);
   const [posts, setPosts] = useState<BetPost[]>([]);
   const [leaderboardUsers, setLeaderboardUsers] = useState<LeaderboardUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -136,7 +150,19 @@ export default function App(): JSX.Element {
   const [newCloseTime, setNewCloseTime] = useState("");
   const [startAllTimers] = useState(true);
 
-  const [balance, setBalance] = useState(1000);
+  const backgroundColor = "#DA291C";
+  const textcolor = "white";
+  const fontSize = 18;
+
+  const getAuthHeaders = (): Record<string, string> => {
+    if (!authToken) {
+      return {};
+    }
+
+    return {
+      Authorization: `Bearer ${authToken}`,
+    };
+  };
 
   const loadMarkets = async () => {
     const response = await fetch("/api/markets");
@@ -178,6 +204,49 @@ export default function App(): JSX.Element {
     void refreshAppData();
   }, []);
 
+  useEffect(() => {
+    if (!authToken) {
+      setCurrentLoggedInUser(null);
+      return;
+    }
+
+    let isActive = true;
+
+    const loadCurrentUser = async () => {
+      try {
+        const response = await fetch("/api/auth/me", {
+          headers: getAuthHeaders(),
+        });
+
+        if (!response.ok) {
+          localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+
+          if (isActive) {
+            setAuthToken(null);
+            setCurrentLoggedInUser(null);
+          }
+          return;
+        }
+
+        const responseBody = await response.json();
+
+        if (isActive) {
+          setCurrentLoggedInUser(responseBody.user);
+        }
+      } catch {
+        if (isActive) {
+          setCurrentLoggedInUser(null);
+        }
+      }
+    };
+
+    void loadCurrentUser();
+
+    return () => {
+      isActive = false;
+    };
+  }, [authToken]);
+
   const placeBet = async (
     marketId: string,
     outcomeId: string,
@@ -204,8 +273,70 @@ export default function App(): JSX.Element {
       throw new Error(errorBody?.error || "Failed to place bet");
     }
 
-    setBalance((prev) => prev - amount);
+    const wagerResponse = await response.json();
+    await Promise.all([loadMarkets(), loadLeaderboard()]);
+
+    setCurrentLoggedInUser((currentUser) =>
+      currentUser
+        ? {
+            ...currentUser,
+            balance: Number(wagerResponse.userBalance),
+          }
+        : currentUser
+    );
+  };
+
+  const castVote = async (marketId: string, voteType: "up" | "down") => {
+    if (!authToken) {
+      throw new Error("Please log in to vote");
+    }
+
+    const response = await fetch(`/api/markets/${marketId}/votes`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ voteType }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.error || "Failed to submit vote");
+    }
+
     await loadMarkets();
+  };
+
+  const loadComments = async (marketId: string): Promise<MarketComment[]> => {
+    const response = await fetch(`/api/markets/${marketId}/comments`);
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.error || "Failed to load comments");
+    }
+
+    return response.json();
+  };
+
+  const addComment = async (
+    marketId: string,
+    body: string
+  ): Promise<MarketComment> => {
+    const response = await fetch(`/api/markets/${marketId}/comments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ body }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.error || "Failed to post comment");
+    }
+
+    return response.json();
   };
 
   const handleCreatePost = async () => {
@@ -226,7 +357,7 @@ export default function App(): JSX.Element {
           description: newContent,
           outcome1: newLeft,
           outcome2: newRight,
-          endTime: newEndTime || null,
+          closesAt: newCloseTime,
         }),
       });
 
@@ -239,7 +370,7 @@ export default function App(): JSX.Element {
       setNewContent("");
       setNewLeft("");
       setNewRight("");
-      setNewEndTime("");
+      setNewCloseTime("");
       setShowCreateModal(false);
 
       await refreshAppData();
@@ -250,15 +381,28 @@ export default function App(): JSX.Element {
     }
   };
 
+  const handleLogout = () => {
+    if (!authToken) {
+      setCurrentLoggedInUser(null);
+      return;
+    }
+
+    void fetch("/api/auth/logout", {
+      method: "POST",
+      headers: getAuthHeaders(),
+    }).finally(() => {
+      localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+      setAuthToken(null);
+      setCurrentLoggedInUser(null);
+    });
+  };
+
   return (
     <div>
       <div className="banner">
-        <img
-          src={banner}
-          alt="Website Banner"
-        />
+        <img src={banner} alt="Website Banner" />
         <h1>G R I N G A M B L I N G</h1>
-        <Currency balance={balance} />
+        <Currency acorns={currentLoggedInUser?.balance ?? 0} />
       </div>
 
       <div className="button-area">
@@ -277,13 +421,15 @@ export default function App(): JSX.Element {
           textColor={textcolor}
           fontSize={fontSize}
           pillShape
-          onClick={() => {    if (currentLoggedInUser) {
-            setCurrentLoggedInUser(null);
-          } else {
-            setShowLoginModal(true);
-          }}}
+          onClick={() => {
+            if (currentLoggedInUser) {
+              handleLogout();
+            } else {
+              setShowLoginModal(true);
+            }
+          }}
         >
-          {currentLoggedInUser ? `Log Out (${currentLoggedInUser})` : "Login"}
+          {currentLoggedInUser ? `Log Out (${currentLoggedInUser.username})` : "Login"}
         </Button>
 
         <Button
@@ -297,72 +443,62 @@ export default function App(): JSX.Element {
         </Button>
       </div>
 
-      {/* <div>
-      <Login />
-    </div> */}
-
-
-    {/* Uncomment if we end up using pass time button */}
-      {/* <div className="button-area">
-        <Button
-          backgroundColor="#000000"
-          textColor={textcolor}
-          fontSize={fontSize}
-          pillShape
-          width="150px"
-          onClick={() => setStartAllTimers(true)}
-        >
-          Pass Time
-        </Button>
-      </div> */}
-
       {errorMessage && <p>{errorMessage}</p>}
       {isLoading && <p>Loading markets...</p>}
 
       <div>
-<div style={{ display: "flex" }}>
+        <div style={{ display: "flex" }}>
+          <div style={{ flex: 1 }}>
+            {posts.map((post) => (
+              <Post
+                key={post.id}
+                backgroundColor={backgroundColor}
+                textColor={textcolor}
+                fontSize={fontSize}
+                pillShape
+                marketId={post.id}
+                title={post.title}
+                content={post.content}
+                closesAt={post.closesAt}
+                leftOutcomeId={post.leftOutcomeId}
+                leftLabel={post.leftLabel}
+                leftTotal={post.leftTotal}
+                rightOutcomeId={post.rightOutcomeId}
+                rightLabel={post.rightLabel}
+                rightTotal={post.rightTotal}
+                upvotes={post.upvotes}
+                downvotes={post.downvotes}
+                onPlaceBet={placeBet}
+                onVote={castVote}
+                onLoadComments={loadComments}
+                onAddComment={addComment}
+                startAllTimers={startAllTimers}
+              />
+            ))}
+          </div>
 
-  {/* LEFT SIDE: Bets feed */}
-  <div style={{ flex: 1 }}>
-    {posts.map((post) => (
-      <Post
-        key={post.id}
-        backgroundColor={backgroundColor}
-        textColor={textcolor}
-        fontSize={fontSize}
-        pillShape
-        marketId={post.id}
-        title={post.title}
-        content={post.content}
-        leftOutcomeId={post.leftOutcomeId}
-        leftLabel={post.leftLabel}
-        leftTotal={post.leftTotal}
-        rightOutcomeId={post.rightOutcomeId}
-        rightLabel={post.rightLabel}
-        rightTotal={post.rightTotal}
-        onPlaceBet={placeBet}
-        endTime={post.endTime}
-      />
-    ))}
-  </div>
+          <div
+            style={{
+              width: "250px",
+              border: "4px solid #DA291C",
+              padding: "15px",
+              borderRadius: "8px",
+              marginLeft: "10px",
+              marginTop: "20px",
+              marginRight: "20px",
+            }}
+          >
+            <Leaderboard
+              players={leaderboardUsers.map((user) => ({
+                id: user.id,
+                username: user.username,
+                acorns: Number(user.balance),
+              }))}
+            />
+          </div>
+        </div>
+      </div>
 
-  {/* RIGHT SIDE: Leaderboard */}
-  <div
-    style={{
-      width: "250px",
-      border: "4px solid #DA291C",
-      padding: "15px",
-      borderRadius: "8px",
-      marginLeft: "10px",
-      marginTop: "20px",
-      marginRight: "20px",
-    }}
-  >
-    <Leaderboard players={fakePlayers} />
-  </div>
-
-</div>
-</div>
       {showCreateModal && (
         <div
           onClick={() => setShowCreateModal(false)}
@@ -425,14 +561,10 @@ export default function App(): JSX.Element {
               style={{ padding: "8px" }}
             />
 
-            <label style={{ fontSize: "14px", fontWeight: "bold", color: "#333" }}>
-              Bet ends at:
-            </label>
             <input
               type="datetime-local"
-              value={newEndTime}
-              onChange={(e) => setNewEndTime(e.target.value)}
-              min={new Date().toISOString().slice(0, 16)}
+              value={newCloseTime}
+              onChange={(e) => setNewCloseTime(e.target.value)}
               style={{ padding: "8px" }}
             />
 
@@ -467,13 +599,15 @@ export default function App(): JSX.Element {
         >
           <div onClick={(e) => e.stopPropagation()}>
             <Login
-              backgroundColor = "white"
-              textColor = {textcolor}
-              fontSize = {fontSize}
+              backgroundColor="white"
+              textColor={textcolor}
+              fontSize={fontSize}
               isOpen={showLoginModal}
               onClose={() => setShowLoginModal(false)}
-              onLoginSuccess={(name) => {          // ✅ add this
-                setCurrentLoggedInUser(name);
+              onLoginSuccess={(token, user) => {
+                localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+                setAuthToken(token);
+                setCurrentLoggedInUser(user);
                 setShowLoginModal(false);
                 void refreshAppData();
               }}
@@ -506,15 +640,16 @@ export default function App(): JSX.Element {
               isOpen={showRegisterModal}
               onClose={() => setShowRegisterModal(false)}
               onRegisterSuccess={(token, user) => {
-                setCurrentLoggedInUser(user.username);
+                localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+                setAuthToken(token);
+                setCurrentLoggedInUser(user);
                 setShowRegisterModal(false);
+                void refreshAppData();
               }}
             />
           </div>
         </div>
       )}
     </div>
-
-    
   );
 }

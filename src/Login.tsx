@@ -29,8 +29,6 @@ function Login({
   isOpen,
   onClose,
   backgroundColor,
-  textColor,
-  fontSize,
   onLoginSuccess,
 }: LoginProps): JSX.Element {
   const [errorMessage, setErrorMessage] = useState("");
@@ -38,7 +36,7 @@ function Login({
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<LoginFormData>();
 
   const onSubmit: SubmitHandler<LoginFormData> = async (data) => {

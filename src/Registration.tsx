@@ -30,15 +30,13 @@ function Register({
   isOpen,
   onClose,
   backgroundColor,
-  textColor,
-  fontSize,
   onRegisterSuccess,
 }: RegisterProps): JSX.Element {
   const [errorMessage, setErrorMessage] = useState("");
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<FormData>();
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
