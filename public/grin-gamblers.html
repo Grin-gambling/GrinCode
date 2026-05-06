@@ -1,0 +1,2368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐿️ Grin-Gamblers - Squirrel Casino</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(180deg, #1a0f0a 0%, #2d1810 50%, #1a0f0a 100%);
+      color: white;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 15px;
+      position: relative;
+    }
+
+    /* Ambient Effects */
+    .glow-1,
+    .glow-2 {
+      position: fixed;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .glow-1 {
+      top: -100px;
+      left: 20%;
+      background: rgba(194, 120, 62, 0.2);
+    }
+
+    .glow-2 {
+      bottom: -100px;
+      right: 20%;
+      background: rgba(101, 163, 13, 0.15);
+    }
+
+    /* Header */
+    h1 {
+      text-align: center;
+      font-size: 2.2rem;
+      font-weight: 900;
+      background: linear-gradient(90deg, #fcd34d, #f59e0b, #fcd34d);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: rgba(194, 120, 62, 0.7);
+      font-size: 0.7rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 15px;
+    }
+
+    /* Sound Toggle */
+    .sound-toggle {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: rgba(194, 120, 62, 0.3);
+      border: 1px solid rgba(194, 120, 62, 0.4);
+      color: #fcd34d;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .sound-toggle:hover {
+      background: rgba(194, 120, 62, 0.5);
+    }
+
+    .sound-toggle.muted {
+      opacity: 0.5;
+    }
+
+    /* Wallet */
+    .wallet {
+      background: linear-gradient(180deg, rgba(45, 24, 16, 0.95), rgba(26, 15, 10, 0.95));
+      border: 1px solid rgba(194, 120, 62, 0.4);
+      border-radius: 20px;
+      padding: 18px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 0 40px rgba(194, 120, 62, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .wallet::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.1), transparent);
+      animation: walletShine 3s infinite;
+    }
+
+    @keyframes walletShine {
+      0% {
+        left: -100%;
+      }
+
+      50%,
+      100% {
+        left: 100%;
+      }
+    }
+
+    .wallet-icon {
+      width: 55px;
+      height: 55px;
+      background: linear-gradient(135deg, #c2783e, #8b5a2b);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      box-shadow: 0 4px 15px rgba(194, 120, 62, 0.5);
+      flex-shrink: 0;
+    }
+
+    .wallet-info {
+      flex: 1;
+    }
+
+    .wallet-label {
+      color: rgba(194, 120, 62, 0.7);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .wallet-row {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+    }
+
+    .wallet-amount {
+      font-size: 2rem;
+      font-weight: 900;
+      color: white;
+      transition: transform 0.2s, color 0.2s;
+    }
+
+    .wallet-amount.pulse {
+      animation: pulse 0.3s ease;
+      color: #fbbf24;
+    }
+
+    .wallet-amount.lose {
+      animation: shake 0.3s ease;
+      color: #ef4444;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.15);
+      }
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      25% {
+        transform: translateX(-5px);
+      }
+
+      75% {
+        transform: translateX(5px);
+      }
+    }
+
+    .wallet-pts {
+      color: rgba(194, 120, 62, 0.8);
+      font-size: 0.85rem;
+    }
+
+    .win-display {
+      color: #65a30d;
+      font-weight: 900;
+      font-size: 1.1rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      text-shadow: 0 0 10px rgba(101, 163, 13, 0.5);
+    }
+
+    .win-display.show {
+      opacity: 1;
+    }
+
+    .reset-btn {
+      padding: 10px 16px;
+      background: linear-gradient(90deg, #c2783e, #8b5a2b);
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-weight: 700;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: none;
+      transition: transform 0.2s;
+      box-shadow: 0 4px 15px rgba(194, 120, 62, 0.4);
+    }
+
+    .reset-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .reset-btn.show {
+      display: block;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 5px;
+      padding: 5px;
+      background: rgba(26, 15, 10, 0.95);
+      border-radius: 16px;
+      border: 1px solid rgba(194, 120, 62, 0.25);
+      margin-bottom: 12px;
+      overflow-x: auto;
+    }
+
+    .tab {
+      flex: 1;
+      min-width: 70px;
+      padding: 10px 6px;
+      border: none;
+      border-radius: 12px;
+      background: transparent;
+      color: rgba(194, 120, 62, 0.6);
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .tab:hover {
+      color: rgba(194, 120, 62, 0.9);
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, #c2783e, #8b5a2b);
+      color: white;
+      box-shadow: 0 4px 15px rgba(194, 120, 62, 0.5);
+    }
+
+    .tab-label {
+      display: block;
+      font-size: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+      font-weight: 700;
+    }
+
+    /* Game Container */
+    .game {
+      background: linear-gradient(180deg, rgba(45, 24, 16, 0.95), rgba(26, 15, 10, 0.95));
+      border-radius: 24px;
+      padding: 20px;
+      border: 1px solid rgba(194, 120, 62, 0.3);
+      box-shadow: 0 0 60px rgba(194, 120, 62, 0.1);
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .game.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 14px;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-brown {
+      background: linear-gradient(135deg, #c2783e, #8b5a2b);
+      color: white;
+      box-shadow: 0 4px 20px rgba(194, 120, 62, 0.5);
+    }
+
+    .btn-green {
+      background: linear-gradient(135deg, #65a30d, #84cc16);
+      color: white;
+      box-shadow: 0 4px 20px rgba(101, 163, 13, 0.4);
+    }
+
+    .btn-red {
+      background: linear-gradient(135deg, #dc2626, #ef4444);
+      color: white;
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-amber {
+      background: linear-gradient(135deg, #d97706, #f59e0b);
+      color: white;
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+    }
+
+    .btn-small {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border-radius: 12px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      background: rgba(194, 120, 62, 0.3);
+      border: 1px solid rgba(194, 120, 62, 0.5);
+      color: #fcd34d;
+    }
+
+    .btn-small:hover {
+      background: rgba(194, 120, 62, 0.5);
+    }
+
+    /* Bet Controls */
+    .bet-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin: 15px 0;
+    }
+
+    .bet-display {
+      text-align: center;
+    }
+
+    .bet-label {
+      color: rgba(194, 120, 62, 0.7);
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .bet-amount {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #fbbf24;
+      text-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+    }
+
+    /* Result Message */
+    .result {
+      text-align: center;
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin: 12px 0;
+      min-height: 26px;
+      transition: all 0.3s;
+    }
+
+    .result.win {
+      color: #65a30d;
+      text-shadow: 0 0 15px rgba(101, 163, 13, 0.5);
+    }
+
+    .result.lose {
+      color: #ef4444;
+      text-shadow: 0 0 15px rgba(239, 68, 68, 0.3);
+    }
+
+    .result.neutral {
+      color: #fbbf24;
+      text-shadow: 0 0 15px rgba(251, 191, 36, 0.3);
+    }
+
+    /* ===== SLOTS ===== */
+    .slots-machine {
+      background: linear-gradient(180deg, #1a0f0a, #2d1810);
+      border-radius: 16px;
+      padding: 20px;
+      border: 2px solid rgba(194, 120, 62, 0.4);
+      position: relative;
+    }
+
+    .slots-machine::before {
+      content: '🐿️ NUTTY SLOTS 🐿️';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #c2783e, #8b5a2b);
+      color: white;
+      padding: 4px 16px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .reels-container {
+      background: #0a0605;
+      border-radius: 12px;
+      padding: 15px 10px;
+      border: 3px solid rgba(194, 120, 62, 0.5);
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+    }
+
+    .reels {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .reel {
+      width: 75px;
+      height: 90px;
+      background: linear-gradient(180deg, #2d1810 0%, #1a0f0a 50%, #2d1810 100%);
+      border-radius: 10px;
+      border: 2px solid rgba(194, 120, 62, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.8rem;
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+      transition: transform 0.1s;
+    }
+
+    .reel.spinning {
+      animation: reelSpin 0.1s infinite;
+    }
+
+    @keyframes reelSpin {
+
+      0%,
+      100% {
+        transform: translateY(-2px);
+      }
+
+      50% {
+        transform: translateY(2px);
+      }
+    }
+
+    .payouts {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-top: 15px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+    }
+
+    .payout-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: rgba(194, 120, 62, 0.1);
+      border-radius: 8px;
+      font-size: 0.75rem;
+    }
+
+    .payout-symbols {
+      font-size: 1rem;
+    }
+
+    .payout-mult {
+      color: #fbbf24;
+      font-weight: 700;
+    }
+
+    /* ===== ROULETTE ===== */
+    .roulette-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    .wheel-wrapper {
+      position: relative;
+      margin: 20px 0;
+    }
+
+    .roulette-pointer {
+      position: absolute;
+      top: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 2rem;
+      z-index: 10;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    }
+
+    .roulette-wheel {
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      position: relative;
+      transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .wheel-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #c2783e, #8b5a2b);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+      z-index: 5;
+    }
+
+    .roulette-bets {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 15px;
+      width: 100%;
+    }
+
+    .bet-btn {
+      padding: 12px 8px;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    .bet-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .bet-btn.selected {
+      border-color: #fbbf24;
+      box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+    }
+
+    .bet-btn.red-bet {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: white;
+    }
+
+    .bet-btn.black-bet {
+      background: linear-gradient(135deg, #1f2937, #111827);
+      color: white;
+    }
+
+    .bet-btn.green-bet {
+      background: linear-gradient(135deg, #059669, #047857);
+      color: white;
+    }
+
+    .bet-btn.odd-bet {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      color: white;
+    }
+
+    .bet-btn.even-bet {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+    }
+
+    .bet-btn.high-bet {
+      background: linear-gradient(135deg, #ea580c, #c2410c);
+      color: white;
+    }
+
+    .bet-btn.low-bet {
+      background: linear-gradient(135deg, #0891b2, #0e7490);
+      color: white;
+    }
+
+    .number-bets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .number-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.7rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .number-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .number-btn.selected {
+      box-shadow: 0 0 10px #fbbf24;
+      border: 2px solid #fbbf24;
+    }
+
+    .number-btn.red {
+      background: #dc2626;
+      color: white;
+    }
+
+    .number-btn.black {
+      background: #1f2937;
+      color: white;
+    }
+
+    .number-btn.green {
+      background: #059669;
+      color: white;
+    }
+
+    .roulette-result {
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    .result-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .result-number.red {
+      background: #dc2626;
+    }
+
+    .result-number.black {
+      background: #1f2937;
+    }
+
+    .result-number.green {
+      background: #059669;
+    }
+
+    /* ===== BIG SIX WHEEL ===== */
+    .bigsix-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .bigsix-wheel-wrapper {
+      position: relative;
+      margin: 20px 0;
+    }
+
+    .bigsix-pointer {
+      position: absolute;
+      top: 50%;
+      right: -20px;
+      transform: translateY(-50%);
+      font-size: 2rem;
+      z-index: 10;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    }
+
+    .bigsix-wheel {
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      position: relative;
+      transition: transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .bigsix-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(135deg, #c2783e, #8b5a2b);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      z-index: 5;
+    }
+
+    .bigsix-bets {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    .bigsix-bet {
+      padding: 15px 10px;
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+
+    .bigsix-bet:hover {
+      transform: scale(1.03);
+    }
+
+    .bigsix-bet.selected {
+      border-color: #fbbf24;
+      box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);
+    }
+
+    .bigsix-bet .symbol {
+      font-size: 1.5rem;
+    }
+
+    .bigsix-bet .mult {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fbbf24;
+    }
+
+    .bigsix-bet.acorn {
+      background: linear-gradient(135deg, #742802, #6b4423);
+      color: white;
+    }
+
+    .bigsix-bet.leaf {
+      background: linear-gradient(135deg, #65a30d, #4d7c0f);
+      color: white;
+    }
+
+    .bigsix-bet.nut {
+      background: linear-gradient(135deg, #a8415b, #a16030);
+      color: white;
+    }
+
+    .bigsix-bet.tree {
+      background: linear-gradient(135deg, #059669, #047857);
+      color: white;
+    }
+
+    .bigsix-bet.squirrel {
+      background: linear-gradient(135deg, #d97706, #b45309);
+      color: white;
+    }
+
+    .bigsix-bet.jackpot {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #1a0f0a;
+    }
+
+    /* ===== CRAPS ===== */
+    .craps-container {
+      text-align: center;
+    }
+
+    .dice-area {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin: 20px 0;
+      perspective: 500px;
+    }
+
+    .die {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #fefce8, #fef3c7);
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: #1a0f0a;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), inset 0 -3px 0 rgba(0, 0, 0, 0.1);
+      transition: transform 0.1s;
+    }
+
+    .die.rolling {
+      animation: diceRoll 0.15s infinite;
+    }
+
+    @keyframes diceRoll {
+      0% {
+        transform: rotateX(0deg) rotateY(0deg);
+      }
+
+      25% {
+        transform: rotateX(90deg) rotateY(45deg);
+      }
+
+      50% {
+        transform: rotateX(180deg) rotateY(90deg);
+      }
+
+      75% {
+        transform: rotateX(270deg) rotateY(135deg);
+      }
+
+      100% {
+        transform: rotateX(360deg) rotateY(180deg);
+      }
+    }
+
+    .craps-info {
+      background: rgba(194, 120, 62, 0.15);
+      border-radius: 12px;
+      padding: 15px;
+      margin: 15px 0;
+    }
+
+    .craps-phase {
+      font-size: 0.8rem;
+      color: rgba(194, 120, 62, 0.8);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .craps-point {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #fbbf24;
+      margin-top: 5px;
+    }
+
+    .dice-total {
+      font-size: 2rem;
+      font-weight: 900;
+      margin: 10px 0;
+      color: #c2783e;
+    }
+
+    .craps-rules {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 15px;
+      text-align: left;
+    }
+
+    .craps-rules h4 {
+      color: #fbbf24;
+      font-size: 0.8rem;
+      margin-bottom: 8px;
+    }
+
+    .craps-rules ul {
+      list-style: none;
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .craps-rules li {
+      padding: 3px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .craps-rules li::before {
+      content: '🌰';
+      font-size: 0.6rem;
+    }
+
+    /* ===== BLACKJACK ===== */
+    .blackjack-container {
+      text-align: center;
+    }
+
+    .bj-table {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 16px;
+      padding: 20px;
+      margin: 15px 0;
+    }
+
+    .bj-dealer,
+    .bj-player {
+      margin: 15px 0;
+    }
+
+    .bj-label {
+      font-size: 0.75rem;
+      color: rgba(194, 120, 62, 0.8);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .bj-hand {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      min-height: 100px;
+      flex-wrap: wrap;
+    }
+
+    .bj-card {
+      width: 60px;
+      height: 85px;
+      background: white;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 900;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      position: relative;
+      animation: cardDeal 0.3s ease;
+    }
+
+    @keyframes cardDeal {
+      from {
+        transform: translateY(-50px) rotateY(180deg);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0) rotateY(0);
+        opacity: 1;
+      }
+    }
+
+    .bj-card.red {
+      color: #dc2626;
+    }
+
+    .bj-card.black {
+      color: #1f2937;
+    }
+
+    .bj-card.hidden {
+      background: linear-gradient(135deg, #c2783e, #8b5a2b);
+      color: transparent;
+    }
+
+    .bj-card.hidden::after {
+      content: '🌰';
+      position: absolute;
+      color: white;
+      font-size: 2rem;
+    }
+
+    .bj-card-rank {
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+
+    .bj-card-suit {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    .bj-total {
+      font-size: 1.3rem;
+      font-weight: 900;
+      margin-top: 5px;
+      color: #fbbf24;
+    }
+
+    .bj-actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    /* Confetti */
+    .confetti {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      animation: confettiFall 3s ease-out forwards;
+    }
+
+    @keyframes confettiFall {
+      0% {
+        transform: translateY(-100vh) rotate(0deg);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(100vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: rgba(194, 120, 62, 0.5);
+      font-size: 0.7rem;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="glow-1"></div>
+  <div class="glow-2"></div>
+
+  <div class="container">
+    <button
+      class="sound-toggle"
+      id="marketSwitchBtn"
+      style="right: 64px; font-size: 0.7rem; width: auto; padding: 0 10px;"
+      onclick="switchToMarkets()"
+    >
+      Market
+    </button>
+    <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊</button>
+
+    <h1>🐿️ GrinGamblers</h1>
+    <p class="subtitle">The Grinnellian's Lucky Casino</p>
+
+    <div class="wallet">
+      <div class="wallet-icon">🌰</div>
+      <div class="wallet-info">
+        <div class="wallet-label">Acorn Stash</div>
+        <div class="wallet-row">
+          <span class="wallet-amount" id="balance">1000</span>
+          <span class="wallet-pts">acorns</span>
+        </div>
+      </div>
+      <div class="win-display" id="winDisplay">+0</div>
+      <button class="reset-btn" id="resetBtn" onclick="resetGame()">🐿️ Refill</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchGame('slots')">
+        🎰
+        <span class="tab-label">Slots</span>
+      </button>
+      <button class="tab" onclick="switchGame('roulette')">
+        🎯
+        <span class="tab-label">Roulette</span>
+      </button>
+      <button class="tab" onclick="switchGame('bigsix')">
+        🎡
+        <span class="tab-label">Big Six</span>
+      </button>
+      <button class="tab" onclick="switchGame('craps')">
+        🎲
+        <span class="tab-label">Craps</span>
+      </button>
+      <button class="tab" onclick="switchGame('blackjack')">
+        🃏
+        <span class="tab-label">Blackjack</span>
+      </button>
+    </div>
+
+    <!-- SLOTS GAME -->
+    <div class="game active" id="slots">
+      <div class="slots-machine">
+        <div class="reels-container">
+          <div class="reels">
+            <div class="reel" id="reel1">💎</div>
+            <div class="reel" id="reel2">🍒</div>
+            <div class="reel" id="reel3">🍋</div>
+          </div>
+        </div>
+        <div class="payouts">
+          <div class="payout-item">
+            <span class="payout-symbols">💎💎💎</span>
+            <span class="payout-mult">x50</span>
+          </div>
+          <div class="payout-item">
+            <span class="payout-symbols">7️⃣7️⃣7️⃣</span>
+            <span class="payout-mult">x20</span>
+          </div>
+          <div class="payout-item">
+            <span class="payout-symbols">⭐⭐⭐</span>
+            <span class="payout-mult">x10</span>
+          </div>
+          <div class="payout-item">
+            <span class="payout-symbols">🔔🔔🔔</span>
+            <span class="payout-mult">x8</span>
+          </div>
+          <div class="payout-item">
+            <span class="payout-symbols">🍒🍒🍒</span>
+            <span class="payout-mult">x5</span>
+          </div>
+          <div class="payout-item">
+            <span class="payout-symbols">❓❓❓</span>
+            <span class="payout-mult">x3</span>
+          </div>
+          <div class="payout-item">
+            <span class="payout-symbols">🍒🍒</span>
+            <span class="payout-mult">x2.5</span>
+          </div>
+          <div class="payout-item">
+            <span class="payout-symbols">❓❓</span>
+            <span class="payout-mult">x1.5</span>
+          </div>
+        </div>
+      </div>
+      <div class="bet-controls">
+        <button class="btn-small" onclick="changeBet(-10)">−</button>
+        <div class="bet-display">
+          <div class="bet-label">Bet Amount</div>
+          <div class="bet-amount" id="slotsBet">50</div>
+        </div>
+        <button class="btn-small" onclick="changeBet(10)">+</button>
+      </div>
+      <div class="result" id="slotsResult"></div>
+      <button class="btn btn-brown" id="spinBtn" onclick="spinSlots()">🐿️ Spin the Nuts!</button>
+    </div>
+
+    <!-- ROULETTE GAME -->
+    <div class="game" id="roulette">
+      <div class="roulette-container">
+        <div class="wheel-wrapper">
+          <div class="roulette-pointer">⬇️</div>
+          <div class="roulette-wheel" id="rouletteWheel">
+            <canvas id="rouletteCanvas" width="280" height="280"></canvas>
+            <div class="wheel-center">🐿️</div>
+          </div>
+        </div>
+
+        <div class="roulette-bets">
+          <button class="bet-btn red-bet" onclick="selectRouletteBet('red')">🔴 Red</button>
+          <button class="bet-btn black-bet" onclick="selectRouletteBet('black')">⚫ Black</button>
+          <button class="bet-btn green-bet" onclick="selectRouletteBet('green')">💚 Zero</button>
+          <button class="bet-btn odd-bet" onclick="selectRouletteBet('odd')">Odd</button>
+          <button class="bet-btn even-bet" onclick="selectRouletteBet('even')">Even</button>
+          <button class="bet-btn low-bet" onclick="selectRouletteBet('low')">1-18</button>
+          <button class="bet-btn high-bet" onclick="selectRouletteBet('high')">19-36</button>
+        </div>
+
+        <div class="number-bets" id="numberBets"></div>
+      </div>
+
+      <div class="bet-controls">
+        <button class="btn-small" onclick="changeRouletteBet(-10)">−</button>
+        <div class="bet-display">
+          <div class="bet-label">Bet Amount</div>
+          <div class="bet-amount" id="rouletteBet">50</div>
+        </div>
+        <button class="btn-small" onclick="changeRouletteBet(10)">+</button>
+      </div>
+      <div class="result" id="rouletteResult"></div>
+      <button class="btn btn-brown" id="rouletteSpinBtn" onclick="spinRoulette()">🎯 Spin the Wheel!</button>
+    </div>
+
+    <!-- BIG SIX WHEEL -->
+    <div class="game" id="bigsix">
+      <div class="bigsix-container">
+        <div class="bigsix-wheel-wrapper">
+          <div class="bigsix-pointer">👈</div>
+          <div class="bigsix-wheel" id="bigsixWheel">
+            <canvas id="bigsixCanvas" width="280" height="280"></canvas>
+            <div class="bigsix-center">🐿️</div>
+          </div>
+        </div>
+
+        <div class="bigsix-bets">
+          <div class="bigsix-bet acorn" onclick="selectBigSixBet('acorn')">
+            <div class="symbol">🌰</div>
+            <div class="mult">x2.5</div>
+          </div>
+          <div class="bigsix-bet leaf" onclick="selectBigSixBet('leaf')">
+            <div class="symbol">🍂</div>
+            <div class="mult">x3.5</div>
+          </div>
+          <div class="bigsix-bet nut" onclick="selectBigSixBet('nut')">
+            <div class="symbol">🥜</div>
+            <div class="mult">x5</div>
+          </div>
+          <div class="bigsix-bet tree" onclick="selectBigSixBet('tree')">
+            <div class="symbol">🌳</div>
+            <div class="mult">x7.5</div>
+          </div>
+          <div class="bigsix-bet squirrel" onclick="selectBigSixBet('squirrel')">
+            <div class="symbol">🐿️</div>
+            <div class="mult">x12.5</div>
+          </div>
+          <div class="bigsix-bet jackpot" onclick="selectBigSixBet('jackpot')">
+            <div class="symbol">⭐</div>
+            <div class="mult">x30</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bet-controls">
+        <button class="btn-small" onclick="changeBigSixBet(-10)">−</button>
+        <div class="bet-display">
+          <div class="bet-label">Bet Amount</div>
+          <div class="bet-amount" id="bigsixBet">50</div>
+        </div>
+        <button class="btn-small" onclick="changeBigSixBet(10)">+</button>
+      </div>
+      <div class="result" id="bigsixResult"></div>
+      <button class="btn btn-brown" id="bigsixSpinBtn" onclick="spinBigSix()">🎡 Spin the Wheel!</button>
+    </div>
+
+    <!-- CRAPS GAME -->
+    <div class="game" id="craps">
+      <div class="craps-container">
+        <div class="dice-area">
+          <div class="die" id="die1">🐿️</div>
+          <div class="die" id="die2">🌰</div>
+        </div>
+
+        <div class="dice-total" id="diceTotal">Roll to start!</div>
+
+        <div class="craps-info">
+          <div class="craps-phase" id="crapsPhase">Come-Out Roll</div>
+          <div class="craps-point" id="crapsPoint">—</div>
+        </div>
+
+        <div class="craps-rules">
+          <h4>🐿️ Squirrel's Craps Rules:</h4>
+          <ul>
+            <li><strong>Come-Out Roll:</strong> 7 or 11 = WIN! 🎉</li>
+            <li><strong>Come-Out Roll:</strong> 2, 3, or 12 = LOSE 😢</li>
+            <li><strong>Any other number</strong> becomes your "Point"</li>
+            <li><strong>Point Phase:</strong> Roll your Point again = WIN!</li>
+            <li><strong>Point Phase:</strong> Roll 7 = LOSE (Seven Out)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="bet-controls">
+        <button class="btn-small" onclick="changeCrapsBet(-10)">−</button>
+        <div class="bet-display">
+          <div class="bet-label">Bet Amount</div>
+          <div class="bet-amount" id="crapsBet">50</div>
+        </div>
+        <button class="btn-small" onclick="changeCrapsBet(10)">+</button>
+      </div>
+      <div class="result" id="crapsResult"></div>
+      <button class="btn btn-brown" id="crapsRollBtn" onclick="rollCraps()">🎲 Roll the Dice!</button>
+    </div>
+
+    <!-- BLACKJACK GAME -->
+    <div class="game" id="blackjack">
+      <div class="blackjack-container">
+        <div class="bj-table">
+          <div class="bj-dealer">
+            <div class="bj-label">🐿️ Dealer's Paw</div>
+            <div class="bj-hand" id="dealerHand"></div>
+            <div class="bj-total" id="dealerTotal"></div>
+          </div>
+
+          <div class="bj-player">
+            <div class="bj-label">🌰 Your Stash</div>
+            <div class="bj-hand" id="playerHand"></div>
+            <div class="bj-total" id="playerTotal"></div>
+          </div>
+        </div>
+
+        <div class="bet-controls">
+          <button class="btn-small" onclick="changeBlackjackBet(-10)">−</button>
+          <div class="bet-display">
+            <div class="bet-label">Bet Amount</div>
+            <div class="bet-amount" id="blackjackBet">50</div>
+          </div>
+          <button class="btn-small" onclick="changeBlackjackBet(10)">+</button>
+        </div>
+
+        <div class="result" id="blackjackResult"></div>
+
+        <div class="bj-actions" id="bjActions">
+          <button class="btn btn-brown" onclick="dealBlackjack()">🃏 Deal Cards</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>🐿️ GrinGamblers • Play responsibly, little squirrels! 🌰</p>
+    </div>
+  </div>
+
+  <div class="confetti" id="confetti"></div>
+
+  <script>
+    // ========== AUDIO SYSTEM ==========
+    let soundEnabled = true;
+
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playSound(type) {
+      if (!soundEnabled) return;
+
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      const now = audioContext.currentTime;
+
+      switch (type) {
+        case 'spin':
+          oscillator.frequency.setValueAtTime(200, now);
+          oscillator.frequency.exponentialRampToValueAtTime(400, now + 0.1);
+          gainNode.gain.setValueAtTime(0.3, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+          oscillator.start(now);
+          oscillator.stop(now + 0.1);
+          break;
+        case 'win':
+          [0, 0.1, 0.2].forEach((delay, i) => {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            osc.frequency.setValueAtTime(400 + i * 200, now + delay);
+            gain.gain.setValueAtTime(0.2, now + delay);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.2);
+            osc.start(now + delay);
+            osc.stop(now + delay + 0.2);
+          });
+          break;
+        case 'lose':
+          oscillator.frequency.setValueAtTime(300, now);
+          oscillator.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+          gainNode.gain.setValueAtTime(0.2, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          oscillator.start(now);
+          oscillator.stop(now + 0.3);
+          break;
+        case 'click':
+          oscillator.frequency.setValueAtTime(800, now);
+          gainNode.gain.setValueAtTime(0.1, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+          oscillator.start(now);
+          oscillator.stop(now + 0.05);
+          break;
+        case 'card':
+          oscillator.frequency.setValueAtTime(300, now);
+          oscillator.frequency.setValueAtTime(250, now + 0.05);
+          gainNode.gain.setValueAtTime(0.15, now);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+          oscillator.start(now);
+          oscillator.stop(now + 0.08);
+          break;
+      }
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      const btn = document.getElementById('soundToggle');
+      btn.textContent = soundEnabled ? '🔊' : '🔇';
+      btn.classList.toggle('muted');
+      playSound('click');
+    }
+
+    // ========== GLOBAL STATE ==========
+    let balance = 1000;
+    let slotsBet = 50;
+    let rouletteBet = 50;
+    let bigsixBet = 50;
+    let crapsBet = 50;
+    let blackjackBet = 50;
+    let isSpinning = false;
+
+    // Roulette state
+    let selectedRouletteBet = null;
+    let selectedRouletteNumber = null;
+
+    // Big Six state
+    let selectedBigSixBet = null;
+
+    // Craps state
+    let crapsPhase = 'comeout';
+    let crapsPoint = null;
+
+    // Blackjack state
+    let bjDeck = [];
+    let bjPlayerHand = [];
+    let bjDealerHand = [];
+    let bjGameActive = false;
+    let bjDealerRevealed = false;
+
+    // ========== ROULETTE CONFIG ==========
+    const ROULETTE_NUMBERS = [
+      0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10,
+      5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
+    ];
+
+    const RED_NUMBERS = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
+    const BLACK_NUMBERS = [2, 4, 6, 8, 10, 11, 13, 15, 17, 20, 22, 24, 26, 28, 29, 31, 33, 35];
+
+    function getRouletteColor(num) {
+      if (num === 0) return 'green';
+      return RED_NUMBERS.includes(num) ? 'red' : 'black';
+    }
+
+    // ========== BIG SIX CONFIG ==========
+    const BIGSIX_SEGMENTS = [
+      { symbol: '🌰', name: 'acorn', mult: 2.5 },
+      { symbol: '🍂', name: 'leaf', mult: 3.5 },
+      { symbol: '🥜', name: 'nut', mult: 5 },
+      { symbol: '🌰', name: 'acorn', mult: 2.5 },
+      { symbol: '🌳', name: 'tree', mult: 7.5 },
+      { symbol: '🍂', name: 'leaf', mult: 3.5 },
+      { symbol: '🌰', name: 'acorn', mult: 2.5 },
+      { symbol: '🥜', name: 'nut', mult: 5 },
+      { symbol: '🍂', name: 'leaf', mult: 3.5 },
+      { symbol: '🐿️', name: 'squirrel', mult: 12.5 },
+      { symbol: '🌰', name: 'acorn', mult: 2.5 },
+      { symbol: '🍂', name: 'leaf', mult: 3.5 },
+      { symbol: '🥜', name: 'nut', mult: 5 },
+      { symbol: '🌰', name: 'acorn', mult: 2.5 },
+      { symbol: '🌳', name: 'tree', mult: 7.5 },
+      { symbol: '🍂', name: 'leaf', mult: 3.5 },
+      { symbol: '🌰', name: 'acorn', mult: 2.5 },
+      { symbol: '🥜', name: 'nut', mult: 5 },
+      { symbol: '🍂', name: 'leaf', mult: 3.5 },
+      { symbol: '⭐', name: 'jackpot', mult: 30 },
+      { symbol: '🌰', name: 'acorn', mult: 2.5 },
+      { symbol: '🍂', name: 'leaf', mult: 3.5 },
+      { symbol: '🌳', name: 'tree', mult: 7.5 },
+      { symbol: '🌰', name: 'acorn', mult: 2.5 },
+    ];
+
+    // ========== UTILITY FUNCTIONS ==========
+    function updateBalance() {
+      document.getElementById('balance').textContent = balance;
+      const resetBtn = document.getElementById('resetBtn');
+      if (balance <= 0) {
+        resetBtn.classList.add('show');
+      } else {
+        resetBtn.classList.remove('show');
+      }
+    }
+
+    function switchToMarkets() {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage(
+          { type: 'grin:navigate', view: 'markets' },
+          window.location.origin
+        );
+      }
+    }
+
+    function showWin(amount) {
+      const winDisplay = document.getElementById('winDisplay');
+      const balanceEl = document.getElementById('balance');
+      winDisplay.textContent = '+' + amount;
+      winDisplay.classList.add('show');
+      balanceEl.classList.add('pulse');
+      playSound('win');
+      setTimeout(() => {
+        winDisplay.classList.remove('show');
+        balanceEl.classList.remove('pulse');
+      }, 1500);
+    }
+
+    function showLose() {
+      const balanceEl = document.getElementById('balance');
+      balanceEl.classList.add('lose');
+      playSound('lose');
+      setTimeout(() => balanceEl.classList.remove('lose'), 500);
+    }
+
+    function resetGame() {
+      balance = 1000;
+      updateBalance();
+      crapsPhase = 'comeout';
+      crapsPoint = null;
+      document.getElementById('crapsPhase').textContent = 'Come-Out Roll';
+      document.getElementById('crapsPoint').textContent = '—';
+      bjGameActive = false;
+      playSound('click');
+    }
+
+    function switchGame(game) {
+      playSound('click');
+      document.querySelectorAll('.game').forEach(g => g.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(game).classList.add('active');
+      event.target.closest('.tab').classList.add('active');
+    }
+
+    function createConfetti() {
+      const container = document.getElementById('confetti');
+      const colors = ['#fbbf24', '#c2783e', '#65a30d', '#dc2626', '#8b5a2b'];
+      for (let i = 0; i < 50; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = Math.random() * 0.5 + 's';
+        piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+        container.appendChild(piece);
+        setTimeout(() => piece.remove(), 3000);
+      }
+    }
+
+    // ========== SLOTS GAME ==========
+    const SLOT_SYMBOLS = [ '🍉', '🍈','💎', '🍒', '🍋', '🍊', '🔔', '⭐', '7️⃣','🍇'];
+
+    function changeBet(amount) {
+      slotsBet = Math.max(10, Math.min(balance, slotsBet + amount));
+      document.getElementById('slotsBet').textContent = slotsBet;
+      playSound('click');
+    }
+
+    function spinSlots() {
+      if (isSpinning || balance < slotsBet) return;
+      isSpinning = true;
+
+      balance -= slotsBet;
+      updateBalance();
+      playSound('spin');
+
+      const reels = [document.getElementById('reel1'), document.getElementById('reel2'), document.getElementById('reel3')];
+      const results = [];
+
+      reels.forEach(r => r.classList.add('spinning'));
+      document.getElementById('slotsResult').textContent = '';
+      document.getElementById('spinBtn').disabled = true;
+
+      let spinsLeft = 3;
+
+      reels.forEach((reel, i) => {
+        let spinCount = 0;
+        const targetSpins = 15 + i * 5;
+
+        const spinInterval = setInterval(() => {
+          reel.textContent = SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)];
+          spinCount++;
+
+          if (spinCount >= targetSpins) {
+            clearInterval(spinInterval);
+            reel.classList.remove('spinning');
+            const finalSymbol = SLOT_SYMBOLS[Math.floor(Math.random() * SLOT_SYMBOLS.length)];
+            reel.textContent = finalSymbol;
+            results.push(finalSymbol);
+            spinsLeft--;
+
+            if (spinsLeft === 0) {
+              setTimeout(() => checkSlotsWin(results), 200);
+            }
+          }
+        }, 100);
+      });
+    }
+
+    function checkSlotsWin(results) {
+      let multiplier = 0;
+      let message = '';
+
+      const [a, b, c] = results;
+
+      /*if (
+        (a === '🍉' || a === '🍈') &&
+        (b === '🍉' || b === '🍈') &&
+        (c === '🍉' || c === '🍈')
+      ) {
+        multiplier = 6;
+        message = 'MELON MOCKTAIL! (x6 BONUS!)';
+      } */
+
+      if (a === b && b === c) {
+        if (a === '💎') { multiplier = 50; message = '💎💎💎 TUITION CASHBACK! x50!'; }
+        else if (a === '7️⃣') { multiplier = 20; message = '7️⃣7️⃣7️⃣ LUCKY SEVENS! x20!'; }
+        else if (a === '⭐') { multiplier = 10; message = '⭐⭐⭐ STARS DONT TOUCH THEMSELVES, GRINNELIANS DO! x10!'; }
+        else if (a === '🔔') { multiplier = 8; message = '🔔🔔🔔 BELLS RINGING! x8!'; } 
+        
+        else if (a === '🍒') { multiplier = 5; message = '🍒🍒🍒 CHERRY SURPRISE! x5!'; }
+        //else if (a === '⏳') { multiplier = 0.5; message = '⏳⏳⏳ CURSE OF THE RAH!'; }
+        else { multiplier = 3; message = 'THREE OF A KIND! x3!'; }
+      } else if (a === b || b === c || a === c) {
+        if ((a === '🍒' && b === '🍒') || (b === '🍒' && c === '🍒') || (a === '🍒' && c === '🍒')) {
+          multiplier = 2.5;
+          message = '🍒🍒 CHERRY PAIR! x2.5!';
+        } else {
+          multiplier = 1.5;
+          message = 'PAIR! x1.5 returned!';
+        }
+      } else if (b === '💎') {
+        multiplier = 1.5;
+        message = 'JEWEL IN THE MIDDLE! x1.5! (BONUS)';
+      } else if (a === '💎' && b == '7️⃣' && c == '⭐') {
+        multiplier = 4;
+        message = 'CASCADE HAUL! x7.5! (BONUS)';
+      } else if (a === '🍉' && b == '🍇' && c == '🍈') {
+        multiplier = 6.7;
+        message ='MELON MOCKTAIL!! x6.7! (BONUS)';
+        /* multiplier = 67676767;
+        message = 'MICHAELS HAWK TUAH COCKTAIL (HIGHLY ALCOHOLIC; YOU ARE [liver cirroais] IF YOU GET THIS!!!)! im drunk while wrting this hello PM!!! x67++++++! (BONUS)';
+      
+      */  }
+
+
+      const resultEl = document.getElementById('slotsResult');
+
+      if (multiplier > 0) {
+        const win = slotsBet * multiplier;
+        balance += win;
+        updateBalance();
+        showWin(win);
+        resultEl.textContent = message;
+        resultEl.className = 'result win';
+        if (multiplier >= 5) createConfetti();
+      } else {
+        resultEl.textContent = '🐿️ No luck! Try again!';
+        resultEl.className = 'result lose';
+        showLose();
+      }
+
+      document.getElementById('spinBtn').disabled = false;
+      isSpinning = false;
+    }
+
+    // ========== ROULETTE GAME ==========
+    function initRouletteWheel() {
+      const canvas = document.getElementById('rouletteCanvas');
+      const ctx = canvas.getContext('2d');
+      const centerX = 140;
+      const centerY = 140;
+      const radius = 130;
+
+      const segmentAngle = (2 * Math.PI) / ROULETTE_NUMBERS.length;
+
+      ROULETTE_NUMBERS.forEach((num, i) => {
+        const startAngle = i * segmentAngle - Math.PI / 2;
+        const endAngle = (i + 1) * segmentAngle - Math.PI / 2;
+
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.closePath();
+
+        const color = getRouletteColor(num);
+        ctx.fillStyle = color === 'red' ? '#dc2626' : color === 'black' ? '#1f2937' : '#059669';
+        ctx.fill();
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(startAngle + segmentAngle / 2);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 10px Arial';
+        ctx.fillText(num.toString(), radius - 20, 4);
+        ctx.restore();
+      });
+
+      createNumberButtons();
+    }
+
+    function createNumberButtons() {
+      const container = document.getElementById('numberBets');
+      container.innerHTML = '';
+
+      for (let i = 0; i <= 36; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'number-btn ' + getRouletteColor(i);
+        btn.textContent = i;
+        btn.onclick = () => selectRouletteNumber(i);
+        container.appendChild(btn);
+      }
+    }
+
+    function selectRouletteBet(bet) {
+      selectedRouletteBet = bet;
+      selectedRouletteNumber = null;
+      playSound('click');
+
+      document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('selected'));
+      event.target.classList.add('selected');
+    }
+
+    function selectRouletteNumber(num) {
+      selectedRouletteNumber = num;
+      selectedRouletteBet = 'number';
+      playSound('click');
+
+      document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('.number-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('.number-btn')[num].classList.add('selected');
+    }
+
+    function changeRouletteBet(amount) {
+      rouletteBet = Math.max(10, Math.min(balance, rouletteBet + amount));
+      document.getElementById('rouletteBet').textContent = rouletteBet;
+      playSound('click');
+    }
+
+    function spinRoulette() {
+      if (isSpinning || balance < rouletteBet || (!selectedRouletteBet && selectedRouletteNumber === null)) {
+        if (!selectedRouletteBet && selectedRouletteNumber === null) {
+          document.getElementById('rouletteResult').textContent = 'Select a bet first!';
+          document.getElementById('rouletteResult').className = 'result neutral';
+        }
+        return;
+      }
+
+      isSpinning = true;
+      balance -= rouletteBet;
+      updateBalance();
+      playSound('spin');
+
+      document.getElementById('rouletteResult').textContent = '';
+      document.getElementById('rouletteSpinBtn').disabled = true;
+
+      const resultIndex = Math.floor(Math.random() * ROULETTE_NUMBERS.length);
+      const resultNumber = ROULETTE_NUMBERS[resultIndex];
+      const resultColor = getRouletteColor(resultNumber);
+
+      const segmentAngle = 360 / ROULETTE_NUMBERS.length;
+      const fullRotations = 5 + Math.floor(Math.random() * 3);
+      const targetAngle = fullRotations * 360 - (resultIndex * segmentAngle) - (segmentAngle / 2);
+
+      const wheel = document.getElementById('rouletteWheel');
+      wheel.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+      wheel.style.transform = 'rotate(' + targetAngle + 'deg)';
+
+      setTimeout(() => {
+        checkRouletteWin(resultNumber, resultColor);
+        wheel.style.transition = 'none';
+        wheel.style.transform = 'rotate(' + (targetAngle % 360) + 'deg)';
+        document.getElementById('rouletteSpinBtn').disabled = false;
+        isSpinning = false;
+      }, 4100);
+    }
+
+    function checkRouletteWin(number, color) {
+      let win = 0;
+      let message = '';
+
+      const resultEl = document.getElementById('rouletteResult');
+      resultEl.innerHTML = '<div class="result-number ' + color + '">' + number + '</div><br>';
+
+      if (selectedRouletteNumber !== null && selectedRouletteNumber === number) {
+        win = rouletteBet * 35;
+        message = 'STRAIGHT HIT! You win ' + win + ' acorns! 🐿️';
+      } else if (selectedRouletteBet === 'red' && color === 'red') {
+        win = rouletteBet * 2;
+        message = 'RED WINS! +' + win + ' acorns!';
+      } else if (selectedRouletteBet === 'black' && color === 'black') {
+        win = rouletteBet * 2;
+        message = 'BLACK WINS! +' + win + ' acorns!';
+      } else if (selectedRouletteBet === 'green' && color === 'green') {
+        win = rouletteBet * 14;
+        message = 'GREEN ZERO! +' + win + ' acorns!';
+      } else if (selectedRouletteBet === 'odd' && number !== 0 && number % 2 === 1) {
+        win = rouletteBet * 2;
+        message = 'ODD WINS! +' + win + ' acorns!';
+      } else if (selectedRouletteBet === 'even' && number !== 0 && number % 2 === 0) {
+        win = rouletteBet * 2;
+        message = 'EVEN WINS! +' + win + ' acorns!';
+      } else if (selectedRouletteBet === 'low' && number >= 1 && number <= 18) {
+        win = rouletteBet * 2;
+        message = 'LOW (1-18) WINS! +' + win + ' acorns!';
+      } else if (selectedRouletteBet === 'high' && number >= 19 && number <= 36) {
+        win = rouletteBet * 2;
+        message = 'HIGH (19-36) WINS! +' + win + ' acorns!';
+      }
+
+      if (win > 0) {
+        balance += win;
+        updateBalance();
+        showWin(win);
+        resultEl.innerHTML += '<span class="win">' + message + '</span>';
+        if (win >= rouletteBet * 10) createConfetti();
+      } else {
+        resultEl.innerHTML += '<span class="lose">No luck! The squirrel scurried away! 🐿️</span>';
+        showLose();
+      }
+    }
+
+    // ========== BIG SIX GAME ==========
+    function initBigSixWheel() {
+      const canvas = document.getElementById('bigsixCanvas');
+      const ctx = canvas.getContext('2d');
+      const centerX = 140;
+      const centerY = 140;
+      const radius = 130;
+
+      const segmentAngle = (2 * Math.PI) / BIGSIX_SEGMENTS.length;
+
+      const colors = {
+        'acorn': '#742802',
+        'leaf': '#65a30d',
+        'nut': '#a8415b',
+        'tree': '#059669',
+        'squirrel': '#d97706',
+        'jackpot': '#fbbf24'
+      };
+
+      BIGSIX_SEGMENTS.forEach((seg, i) => {
+        const startAngle = i * segmentAngle - Math.PI / 2;
+        const endAngle = (i + 1) * segmentAngle - Math.PI / 2;
+
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.closePath();
+
+        ctx.fillStyle = colors[seg.name];
+        ctx.fill();
+        ctx.strokeStyle = '#1a0f0a';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(startAngle + segmentAngle / 2);
+        ctx.textAlign = 'center';
+        ctx.font = '20px Arial';
+        ctx.fillText(seg.symbol, radius - 35, 7);
+        ctx.restore();
+      });
+    }
+
+    function selectBigSixBet(bet) {
+      selectedBigSixBet = bet;
+      playSound('click');
+      document.querySelectorAll('.bigsix-bet').forEach(b => b.classList.remove('selected'));
+      event.target.closest('.bigsix-bet').classList.add('selected');
+    }
+
+    function changeBigSixBet(amount) {
+      bigsixBet = Math.max(10, Math.min(balance, bigsixBet + amount));
+      document.getElementById('bigsixBet').textContent = bigsixBet;
+      playSound('click');
+    }
+
+    function spinBigSix() {
+      if (isSpinning || balance < bigsixBet || !selectedBigSixBet) {
+        if (!selectedBigSixBet) {
+          document.getElementById('bigsixResult').textContent = 'Select a bet first!';
+          document.getElementById('bigsixResult').className = 'result neutral';
+        }
+        return;
+      }
+
+      isSpinning = true;
+      balance -= bigsixBet;
+      updateBalance();
+      playSound('spin');
+
+      document.getElementById('bigsixResult').textContent = '';
+      document.getElementById('bigsixSpinBtn').disabled = true;
+
+      const resultIndex = Math.floor(Math.random() * BIGSIX_SEGMENTS.length);
+      const result = BIGSIX_SEGMENTS[resultIndex];
+
+      const segmentAngle = 360 / BIGSIX_SEGMENTS.length;
+      const fullRotations = 5 + Math.floor(Math.random() * 3);
+      const targetAngle = fullRotations * 360 + 90 - (resultIndex * segmentAngle) - (segmentAngle / 2);
+
+      const wheel = document.getElementById('bigsixWheel');
+      wheel.style.transition = 'transform 5s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
+      wheel.style.transform = 'rotate(' + targetAngle + 'deg)';
+
+      setTimeout(() => {
+        checkBigSixWin(result);
+        wheel.style.transition = 'none';
+        wheel.style.transform = 'rotate(' + (targetAngle % 360) + 'deg)';
+        document.getElementById('bigsixSpinBtn').disabled = false;
+        isSpinning = false;
+      }, 5100);
+    }
+
+    function checkBigSixWin(result) {
+      const resultEl = document.getElementById('bigsixResult');
+
+      resultEl.innerHTML = 'Landed on: ' + result.symbol + ' (' + result.name + ')';
+
+      if (result.name === selectedBigSixBet) {
+        const win = bigsixBet * result.mult;
+        balance += win;
+        updateBalance();
+        showWin(win);
+        resultEl.innerHTML += '<br><span class="win">YOU WIN ' + win + ' acorns! (x' + result.mult + ')</span>';
+        resultEl.className = 'result win';
+        if (result.mult >= 10) createConfetti();
+      } else {
+        resultEl.innerHTML += '<br><span class="lose">Better luck next time, little squirrel!</span>';
+        resultEl.className = 'result lose';
+        showLose();
+      }
+    }
+
+    // ========== CRAPS GAME ==========
+    function changeCrapsBet(amount) {
+      if (crapsPhase === 'point') return;
+      crapsBet = Math.max(10, Math.min(balance, crapsBet + amount));
+      document.getElementById('crapsBet').textContent = crapsBet;
+      playSound('click');
+    }
+
+    function rollCraps() {
+      if (isSpinning) return;
+
+      if (crapsPhase === 'comeout') {
+        if (balance < crapsBet) return;
+        balance -= crapsBet;
+        updateBalance();
+      }
+
+      isSpinning = true;
+      playSound('spin');
+      document.getElementById('crapsResult').textContent = '';
+      document.getElementById('crapsRollBtn').disabled = true;
+
+      const die1El = document.getElementById('die1');
+      const die2El = document.getElementById('die2');
+
+      die1El.classList.add('rolling');
+      die2El.classList.add('rolling');
+
+      let rollCount = 0;
+      const rollInterval = setInterval(() => {
+        die1El.textContent = Math.floor(Math.random() * 6) + 1;
+        die2El.textContent = Math.floor(Math.random() * 6) + 1;
+        rollCount++;
+        if (rollCount > 15) {
+          clearInterval(rollInterval);
+
+          const d1 = Math.floor(Math.random() * 6) + 1;
+          const d2 = Math.floor(Math.random() * 6) + 1;
+          const total = d1 + d2;
+
+          die1El.classList.remove('rolling');
+          die2El.classList.remove('rolling');
+          die1El.textContent = d1;
+          die2El.textContent = d2;
+
+          document.getElementById('diceTotal').textContent = 'Total: ' + total;
+
+          setTimeout(() => {
+            resolveCraps(total);
+            document.getElementById('crapsRollBtn').disabled = false;
+            isSpinning = false;
+          }, 300);
+        }
+      }, 80);
+    }
+
+    function resolveCraps(total) {
+      const resultEl = document.getElementById('crapsResult');
+      const phaseEl = document.getElementById('crapsPhase');
+      const pointEl = document.getElementById('crapsPoint');
+
+      if (crapsPhase === 'comeout') {
+        if (total === 7 || total === 11) {
+          const win = crapsBet * 2;
+          balance += win;
+          updateBalance();
+          showWin(win);
+          resultEl.textContent = '🎉 NATURAL ' + total + '! YOU WIN ' + win + ' acorns!';
+          resultEl.className = 'result win';
+          createConfetti();
+        } else if (total === 2 || total === 3 || total === 12) {
+          resultEl.textContent = '😢 CRAPS! You rolled ' + total + '. You lose!';
+          resultEl.className = 'result lose';
+          showLose();
+        } else {
+          crapsPhase = 'point';
+          crapsPoint = total;
+          phaseEl.textContent = 'Point Phase - Roll ' + crapsPoint + ' to Win!';
+          pointEl.textContent = 'Point: ' + crapsPoint;
+          resultEl.textContent = '🎯 Point is ' + total + '! Roll it again to win, avoid 7!';
+          resultEl.className = 'result neutral';
+        }
+      } else {
+        if (total === crapsPoint) {
+          const win = crapsBet * 2;
+          balance += win;
+          updateBalance();
+          showWin(win);
+          resultEl.textContent = '🎉 YOU HIT THE POINT! WIN ' + win + ' acorns!';
+          resultEl.className = 'result win';
+          createConfetti();
+
+          crapsPhase = 'comeout';
+          crapsPoint = null;
+          phaseEl.textContent = 'Come-Out Roll';
+          pointEl.textContent = '—';
+        } else if (total === 7) {
+          resultEl.textContent = '😢 SEVEN OUT! You lose your bet!';
+          resultEl.className = 'result lose';
+          showLose();
+
+          crapsPhase = 'comeout';
+          crapsPoint = null;
+          phaseEl.textContent = 'Come-Out Roll';
+          pointEl.textContent = '—';
+        } else {
+          resultEl.textContent = 'Rolled ' + total + '. Keep rolling for ' + crapsPoint + '!';
+          resultEl.className = 'result neutral';
+        }
+      }
+    }
+
+    // ========== BLACKJACK GAME ==========
+    const SUITS = ['♥️', '♦️', '♣️', '♠️'];
+    const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+    function createDeck() {
+      const deck = [];
+      for (let suit of SUITS) {
+        for (let rank of RANKS) {
+          deck.push({ rank, suit });
+        }
+      }
+      for (let i = deck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+      }
+      return deck;
+    }
+
+    function getCardValue(card) {
+      if (card.rank === 'A') return 11;
+      if (['J', 'Q', 'K'].includes(card.rank)) return 10;
+      return parseInt(card.rank);
+    }
+
+    function calculateHandValue(hand) {
+      let value = 0;
+      let aces = 0;
+
+      hand.forEach(card => {
+        const cardValue = getCardValue(card);
+        value += cardValue;
+        if (card.rank === 'A') aces++;
+      });
+
+      while (value > 21 && aces > 0) {
+        value -= 10;
+        aces--;
+      }
+
+      return value;
+    }
+
+    function renderCard(card, hidden) {
+      const colorClass = (card.suit === '♥️' || card.suit === '♦️') ? 'red' : 'black';
+      if (hidden) {
+        return '<div class="bj-card hidden"></div>';
+      }
+      return '<div class="bj-card ' + colorClass + '"><div class="bj-card-rank">' + card.rank + '</div><div class="bj-card-suit">' + card.suit + '</div></div>';
+    }
+
+    function renderHands() {
+      const dealerHandEl = document.getElementById('dealerHand');
+      const playerHandEl = document.getElementById('playerHand');
+      const dealerTotalEl = document.getElementById('dealerTotal');
+      const playerTotalEl = document.getElementById('playerTotal');
+
+      dealerHandEl.innerHTML = bjDealerHand.map((card, i) => {
+        if (i === 0 && !bjDealerRevealed) return renderCard(card, true);
+        return renderCard(card);
+      }).join('');
+
+      playerHandEl.innerHTML = bjPlayerHand.map(card => renderCard(card)).join('');
+
+      if (bjDealerRevealed) {
+        dealerTotalEl.textContent = 'Total: ' + calculateHandValue(bjDealerHand);
+      } else {
+        dealerTotalEl.textContent = bjDealerHand.length > 0 ? 'Total: ?' : '';
+      }
+
+      playerTotalEl.textContent = bjPlayerHand.length > 0 ? 'Total: ' + calculateHandValue(bjPlayerHand) : '';
+    }
+
+    function changeBlackjackBet(amount) {
+      if (bjGameActive) return;
+      blackjackBet = Math.max(10, Math.min(balance, blackjackBet + amount));
+      document.getElementById('blackjackBet').textContent = blackjackBet;
+      playSound('click');
+    }
+
+    function dealBlackjack() {
+      if (bjGameActive || balance < blackjackBet) return;
+
+      balance -= blackjackBet;
+      updateBalance();
+      playSound('card');
+
+      bjDeck = createDeck();
+      bjPlayerHand = [bjDeck.pop(), bjDeck.pop()];
+      bjDealerHand = [bjDeck.pop(), bjDeck.pop()];
+      bjGameActive = true;
+      bjDealerRevealed = false;
+
+      document.getElementById('blackjackResult').textContent = '';
+      renderHands();
+
+      const playerValue = calculateHandValue(bjPlayerHand);
+      if (playerValue === 21) {
+        setTimeout(() => stand(), 500);
+      } else {
+        showBlackjackActions();
+      }
+    }
+
+    function showBlackjackActions() {
+      const actionsEl = document.getElementById('bjActions');
+      actionsEl.innerHTML = '<button class="btn btn-green" onclick="hit()">🃏 Hit</button><button class="btn btn-amber" onclick="stand()">✋ Stand</button>';
+    }
+
+    function hit() {
+      if (!bjGameActive) return;
+
+      playSound('card');
+      bjPlayerHand.push(bjDeck.pop());
+      renderHands();
+
+      const playerValue = calculateHandValue(bjPlayerHand);
+
+      if (playerValue > 21) {
+        bjGameActive = false;
+        bjDealerRevealed = true;
+        renderHands();
+        document.getElementById('blackjackResult').textContent = '💥 BUST! You went over 21!';
+        document.getElementById('blackjackResult').className = 'result lose';
+        showLose();
+        resetBlackjackActions();
+      } else if (playerValue === 21) {
+        stand();
+      }
+    }
+
+    function stand() {
+      if (!bjGameActive) return;
+
+      bjDealerRevealed = true;
+      renderHands();
+
+      const dealerDraw = () => {
+        const dealerValue = calculateHandValue(bjDealerHand);
+
+        if (dealerValue < 17) {
+          setTimeout(() => {
+            playSound('card');
+            bjDealerHand.push(bjDeck.pop());
+            renderHands();
+            dealerDraw();
+          }, 800);
+        } else {
+          setTimeout(() => resolveBlackjack(), 500);
+        }
+      };
+
+      dealerDraw();
+    }
+
+    function resolveBlackjack() {
+      const playerValue = calculateHandValue(bjPlayerHand);
+      const dealerValue = calculateHandValue(bjDealerHand);
+      const resultEl = document.getElementById('blackjackResult');
+
+      let win = 0;
+      let message = '';
+
+      if (dealerValue > 21) {
+        win = blackjackBet * 2;
+        message = '🎉 Dealer BUSTS! You win ' + win + ' acorns!';
+        resultEl.className = 'result win';
+      } else if (playerValue > dealerValue) {
+        win = blackjackBet * 2;
+        message = '🐿️ YOU WIN! ' + playerValue + ' beats ' + dealerValue + '! +' + win + ' acorns!';
+        resultEl.className = 'result win';
+      } else if (playerValue === dealerValue) {
+        win = blackjackBet;
+        message = '🤝 PUSH! Tie at ' + playerValue + '. Bet returned!';
+        resultEl.className = 'result neutral';
+      } else {
+        message = '😢 Dealer wins ' + dealerValue + ' to ' + playerValue + '!';
+        resultEl.className = 'result lose';
+      }
+
+      if (win > 0) {
+        balance += win;
+        updateBalance();
+        if (win > blackjackBet) {
+          showWin(win - blackjackBet);
+          createConfetti();
+        }
+      } else {
+        showLose();
+      }
+
+      resultEl.textContent = message;
+      bjGameActive = false;
+      resetBlackjackActions();
+    }
+
+    function resetBlackjackActions() {
+      document.getElementById('bjActions').innerHTML = '<button class="btn btn-brown" onclick="dealBlackjack()">🃏 Deal Cards</button>';
+    }
+
+    // ========== PARENT APP BRIDGE ==========
+    const searchParams = new URLSearchParams(window.location.search);
+    const initialBalance = Number(searchParams.get('balance'));
+    let isSyncingFromParent = false;
+
+    if (Number.isFinite(initialBalance) && initialBalance >= 0) {
+      balance = Math.floor(initialBalance);
+    }
+
+    const originalUpdateBalance = updateBalance;
+    updateBalance = function () {
+      originalUpdateBalance();
+
+      if (isSyncingFromParent) {
+        return;
+      }
+
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage(
+          { type: 'grin:minigames-balance', balance },
+          window.location.origin
+        );
+      }
+    };
+
+    window.addEventListener('message', function (event) {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+
+      if (event.data?.type !== 'grin:parent-balance') {
+        return;
+      }
+
+      const nextBalance = Math.floor(Number(event.data.balance));
+
+      if (!Number.isFinite(nextBalance) || nextBalance < 0 || nextBalance === balance) {
+        return;
+      }
+
+      isSyncingFromParent = true;
+      balance = nextBalance;
+      updateBalance();
+      isSyncingFromParent = false;
+    });
+
+    // ========== INITIALIZE ==========
+    document.addEventListener('DOMContentLoaded', function () {
+      initRouletteWheel();
+      initBigSixWheel();
+      updateBalance();
+    });
+  </script>
+
+</body>
+
+</html>

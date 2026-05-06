@@ -11,7 +11,7 @@ import {
   logoutUser,
   registerUser,
 } from './services/authService.js';
-import { getTopUsersByBalance } from './models/userModel.js';
+import { getTopUsersByBalance, updateBalance } from './models/userModel.js';
 
 const app = express();
 const PORT = 3001;
@@ -134,6 +134,27 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.get('/api/auth/me', authMiddleware, async (req, res) => {
   res.json({ user: req.user });
+});
+
+app.post('/api/auth/me/balance', authMiddleware, async (req, res) => {
+  try {
+    const numericBalance = Math.floor(Number(req.body.balance));
+
+    if (!Number.isFinite(numericBalance) || numericBalance < 0) {
+      return res.status(400).json({ error: 'Balance must be a non-negative number' });
+    }
+
+    const updatedUserBalance = await updateBalance(req.user.id, numericBalance);
+
+    res.json({
+      user: {
+        ...req.user,
+        balance: Number(updatedUserBalance.balance),
+      },
+    });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
 });
 
 app.post('/api/auth/logout', authMiddleware, async (req, res) => {

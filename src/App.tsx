@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useRef, useState, type JSX } from "react";
 import "./App.css";
 import banner from "./components/gambling-banner.jpg";
 import Button from "./button";
@@ -22,6 +22,12 @@ type BetPost = {
   upvotes: number;
   downvotes: number;
 };
+
+type AppView = "markets" | "minigames";
+
+type MinigameMessage =
+  | { type: "grin:navigate"; view: AppView }
+  | { type: "grin:minigames-balance"; balance: number };
 
 export type MarketComment = {
   id: string;
@@ -149,10 +155,15 @@ export default function App(): JSX.Element {
   const [newRight, setNewRight] = useState("");
   const [newCloseTime, setNewCloseTime] = useState("");
   const [startAllTimers] = useState(true);
+  const [activeView, setActiveView] = useState<AppView>("markets");
+  const [guestAcorns, setGuestAcorns] = useState(1000);
+  const [minigameSrc, setMinigameSrc] = useState("/grin-gamblers.html");
+  const minigameFrameRef = useRef<HTMLIFrameElement | null>(null);
 
   const backgroundColor = "#DA291C";
   const textcolor = "white";
   const fontSize = 18;
+  const currentAcorns = currentLoggedInUser?.balance ?? guestAcorns;
 
   const getAuthHeaders = (): Record<string, string> => {
     if (!authToken) {
@@ -198,6 +209,30 @@ export default function App(): JSX.Element {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const syncMinigameBalance = async (balance: number) => {
+    if (!authToken) {
+      return;
+    }
+
+    const response = await fetch("/api/auth/me/balance", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ balance }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.error || "Failed to sync acorns");
+    }
+
+    const responseBody = await response.json();
+    setCurrentLoggedInUser(responseBody.user);
+    await loadLeaderboard();
   };
 
   useEffect(() => {
@@ -246,6 +281,75 @@ export default function App(): JSX.Element {
       isActive = false;
     };
   }, [authToken]);
+
+  useEffect(() => {
+    const frameWindow = minigameFrameRef.current?.contentWindow;
+
+    if (!frameWindow) {
+      return;
+    }
+
+    frameWindow.postMessage(
+      {
+        type: "grin:parent-balance",
+        balance: currentAcorns,
+      },
+      window.location.origin
+    );
+  }, [currentAcorns, activeView]);
+
+  useEffect(() => {
+    setMinigameSrc(`/grin-gamblers.html?balance=${currentAcorns}`);
+  }, [authToken]);
+
+  useEffect(() => {
+    const handleMinigameMessage = (event: MessageEvent<MinigameMessage>) => {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+
+      if (event.data?.type === "grin:navigate") {
+        setActiveView(event.data.view);
+        return;
+      }
+
+      if (event.data?.type === "grin:minigames-balance") {
+        const nextBalance = Math.floor(Number(event.data.balance));
+
+        if (!Number.isFinite(nextBalance) || nextBalance < 0) {
+          return;
+        }
+
+        if (nextBalance === currentAcorns) {
+          return;
+        }
+
+        if (!authToken) {
+          setGuestAcorns(nextBalance);
+          setErrorMessage("Guest minigame acorns are local only. Log in to save them to your account.");
+          return;
+        }
+
+        setCurrentLoggedInUser((currentUser) =>
+          currentUser
+            ? {
+                ...currentUser,
+                balance: nextBalance,
+              }
+            : currentUser
+        );
+
+        void syncMinigameBalance(nextBalance).catch((error: unknown) => {
+          const message =
+            error instanceof Error ? error.message : "Failed to sync acorns";
+          setErrorMessage(message);
+        });
+      }
+    };
+
+    window.addEventListener("message", handleMinigameMessage);
+    return () => window.removeEventListener("message", handleMinigameMessage);
+  }, [authToken, currentAcorns]);
 
   const placeBet = async (
     marketId: string,
@@ -402,19 +506,41 @@ export default function App(): JSX.Element {
       <div className="banner">
         <img src={banner} alt="Website Banner" />
         <h1>G R I N G A M B L I N G</h1>
-        <Currency acorns={currentLoggedInUser?.balance ?? 0} />
+        <Currency acorns={currentAcorns} />
       </div>
 
       <div className="button-area">
         <Button
-          backgroundColor={backgroundColor}
-          textColor={textcolor}
+          backgroundColor={activeView === "markets" ? "#DA291C" : "#F7BB65"}
+          textColor={activeView === "markets" ? "#ffffff" : "#000000"}
           fontSize={fontSize}
           pillShape
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => setActiveView("markets")}
         >
-          Create Bet
+          Market
         </Button>
+
+        <Button
+          backgroundColor={activeView === "minigames" ? "#DA291C" : "#F7BB65"}
+          textColor={activeView === "minigames" ? "#ffffff" : "#000000"}
+          fontSize={fontSize}
+          pillShape
+          onClick={() => setActiveView("minigames")}
+        >
+          Minigames
+        </Button>
+
+        {activeView === "markets" && (
+          <Button
+            backgroundColor={backgroundColor}
+            textColor={textcolor}
+            fontSize={fontSize}
+            pillShape
+            onClick={() => setShowCreateModal(true)}
+          >
+            Create Bet
+          </Button>
+        )}
 
         <Button
           backgroundColor={backgroundColor}
@@ -444,60 +570,93 @@ export default function App(): JSX.Element {
       </div>
 
       {errorMessage && <p>{errorMessage}</p>}
-      {isLoading && <p>Loading markets...</p>}
+      {isLoading && activeView === "markets" && <p>Loading markets...</p>}
 
-      <div>
-        <div style={{ display: "flex" }}>
-          <div style={{ flex: 1 }}>
-            {posts.map((post) => (
-              <Post
-                key={post.id}
-                backgroundColor={backgroundColor}
-                textColor={textcolor}
-                fontSize={fontSize}
-                pillShape
-                marketId={post.id}
-                title={post.title}
-                content={post.content}
-                closesAt={post.closesAt}
-                leftOutcomeId={post.leftOutcomeId}
-                leftLabel={post.leftLabel}
-                leftTotal={post.leftTotal}
-                rightOutcomeId={post.rightOutcomeId}
-                rightLabel={post.rightLabel}
-                rightTotal={post.rightTotal}
-                upvotes={post.upvotes}
-                downvotes={post.downvotes}
-                onPlaceBet={placeBet}
-                onVote={castVote}
-                onLoadComments={loadComments}
-                onAddComment={addComment}
-                startAllTimers={startAllTimers}
+      {activeView === "markets" ? (
+        <div>
+          <div style={{ display: "flex" }}>
+            <div style={{ flex: 1 }}>
+              {posts.map((post) => (
+                <Post
+                  key={post.id}
+                  backgroundColor={backgroundColor}
+                  textColor={textcolor}
+                  fontSize={fontSize}
+                  pillShape
+                  marketId={post.id}
+                  title={post.title}
+                  content={post.content}
+                  closesAt={post.closesAt}
+                  leftOutcomeId={post.leftOutcomeId}
+                  leftLabel={post.leftLabel}
+                  leftTotal={post.leftTotal}
+                  rightOutcomeId={post.rightOutcomeId}
+                  rightLabel={post.rightLabel}
+                  rightTotal={post.rightTotal}
+                  upvotes={post.upvotes}
+                  downvotes={post.downvotes}
+                  onPlaceBet={placeBet}
+                  onVote={castVote}
+                  onLoadComments={loadComments}
+                  onAddComment={addComment}
+                  startAllTimers={startAllTimers}
+                />
+              ))}
+            </div>
+
+            <div
+              style={{
+                width: "250px",
+                border: "4px solid #DA291C",
+                padding: "15px",
+                borderRadius: "8px",
+                marginLeft: "10px",
+                marginTop: "20px",
+                marginRight: "20px",
+              }}
+            >
+              <Leaderboard
+                players={leaderboardUsers.map((user) => ({
+                  id: user.id,
+                  username: user.username,
+                  acorns: Number(user.balance),
+                }))}
               />
-            ))}
-          </div>
-
-          <div
-            style={{
-              width: "250px",
-              border: "4px solid #DA291C",
-              padding: "15px",
-              borderRadius: "8px",
-              marginLeft: "10px",
-              marginTop: "20px",
-              marginRight: "20px",
-            }}
-          >
-            <Leaderboard
-              players={leaderboardUsers.map((user) => ({
-                id: user.id,
-                username: user.username,
-                acorns: Number(user.balance),
-              }))}
-            />
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="minigame-shell">
+          <div className="minigame-note">
+            {currentLoggedInUser
+              ? "Minigame wins and losses sync directly with your acorns."
+              : "Log in first if you want your minigame acorns to save to your account."}
+          </div>
+
+          <iframe
+            ref={minigameFrameRef}
+            key={currentLoggedInUser?.id ?? "guest"}
+            className="minigame-frame"
+            src={minigameSrc}
+            title="Grin Gamblers Minigames"
+            onLoad={() => {
+              const frameWindow = minigameFrameRef.current?.contentWindow;
+
+              if (!frameWindow) {
+                return;
+              }
+
+              frameWindow.postMessage(
+                {
+                  type: "grin:parent-balance",
+                  balance: currentAcorns,
+                },
+                window.location.origin
+              );
+            }}
+          />
+        </div>
+      )}
 
       {showCreateModal && (
         <div
