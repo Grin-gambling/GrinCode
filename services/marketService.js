@@ -10,21 +10,32 @@ import * as outcomeModel from '../models/outcomeModel.js';
  * @param {string} outcome2
  */
 
-async function createMarket(question, description, outcome1, outcome2) {    
+async function createMarket(question, description, outcome1, outcome2, closesAt) {    
     const client = await db.connect();
   
     try {
       await client.query('BEGIN');
   
       // Validate inputs
-      if (!question || !description) {
+      if (!question || !description || !outcome1 || !outcome2 || !closesAt) {
         throw new Error('Invalid market data');
+      }
+
+      const parsedCloseTime = new Date(closesAt);
+
+      if (Number.isNaN(parsedCloseTime.getTime())) {
+        throw new Error('Invalid close time');
+      }
+
+      if (parsedCloseTime.getTime() <= Date.now()) {
+        throw new Error('Close time must be in the future');
       }
   
       // Create market 
       const market = await marketModel.createMarket(
         question,
         description,
+        parsedCloseTime.toISOString(),
         client
       );
   

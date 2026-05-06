@@ -12,6 +12,7 @@ type BetPost = {
   id: string;
   title: string;
   content: string;
+  closesAt: string;
   leftOutcomeId: string;
   leftLabel: string;
   leftTotal: number;
@@ -33,6 +34,7 @@ type ApiMarketRow = {
   id: string;
   question: string;
   description: string;
+  closes_at: string;
   outcome_id: string;
   label: string;
   total_amount: number | string;
@@ -48,6 +50,12 @@ type AuthUser = {
   created_at: string;
 };
 
+type LeaderboardUser = {
+  id: string;
+  username: string;
+  balance: number | string;
+};
+
 const AUTH_TOKEN_STORAGE_KEY = "grincodeAuthToken";
 
 function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
@@ -57,6 +65,7 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
       id: string;
       title: string;
       content: string;
+      closesAt: string;
       upvotes: number;
       downvotes: number;
       outcomes: Array<{
@@ -83,6 +92,7 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
       id: row.id,
       title: row.question,
       content: row.description,
+      closesAt: row.closes_at,
       upvotes: Number(row.total_upvotes),
       downvotes: Number(row.total_downvotes),
       outcomes: [
@@ -107,6 +117,7 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
         id: market.id,
         title: market.title,
         content: market.content,
+        closesAt: market.closesAt,
         leftOutcomeId: leftOutcome.id,
         leftLabel: leftOutcome.label,
         leftTotal: leftOutcome.totalAmount,
@@ -120,13 +131,6 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
     .filter((market): market is BetPost => market !== null);
 }
 
-const fakePlayers = [
-  { id: "1", name: "Mina", balance: 1000 },
-  { id: "2", name: "Lucas", balance: 0 },
-  { id: "3", name: "Sam", balance: 0 },
-  { id: "4", name: "Youssef", balance: 0 },
-];
-
 export default function App(): JSX.Element {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -134,22 +138,21 @@ export default function App(): JSX.Element {
     localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
   );
   const [currentLoggedInUser, setCurrentLoggedInUser] = useState<AuthUser | null>(null);
-
-  const backgroundColor = "#DA291C";
-  const textcolor = "white";
-  const fontSize = 18;
-
   const [posts, setPosts] = useState<BetPost[]>([]);
+  const [leaderboardUsers, setLeaderboardUsers] = useState<LeaderboardUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
   const [newLeft, setNewLeft] = useState("");
   const [newRight, setNewRight] = useState("");
+  const [newCloseTime, setNewCloseTime] = useState("");
+  const [startAllTimers] = useState(true);
 
-  const [startAllTimers] = useState(false);
+  const backgroundColor = "#DA291C";
+  const textcolor = "white";
+  const fontSize = 18;
 
   const getAuthHeaders = (): Record<string, string> => {
     if (!authToken) {
@@ -162,21 +165,35 @@ export default function App(): JSX.Element {
   };
 
   const loadMarkets = async () => {
+    const response = await fetch("/api/markets");
+
+    if (!response.ok) {
+      throw new Error("Failed to load markets");
+    }
+
+    const rows: ApiMarketRow[] = await response.json();
+    setPosts(mapMarketRowsToPosts(rows));
+  };
+
+  const loadLeaderboard = async () => {
+    const response = await fetch("/api/leaderboard");
+
+    if (!response.ok) {
+      throw new Error("Failed to load leaderboard");
+    }
+
+    const rows: LeaderboardUser[] = await response.json();
+    setLeaderboardUsers(rows);
+  };
+
+  const refreshAppData = async () => {
     try {
       setIsLoading(true);
       setErrorMessage("");
-
-      const response = await fetch("/api/markets");
-
-      if (!response.ok) {
-        throw new Error("Failed to load markets");
-      }
-
-      const rows: ApiMarketRow[] = await response.json();
-      setPosts(mapMarketRowsToPosts(rows));
+      await Promise.all([loadMarkets(), loadLeaderboard()]);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Failed to load markets";
+        error instanceof Error ? error.message : "Failed to load app data";
       setErrorMessage(message);
     } finally {
       setIsLoading(false);
@@ -184,7 +201,7 @@ export default function App(): JSX.Element {
   };
 
   useEffect(() => {
-    void loadMarkets();
+    void refreshAppData();
   }, []);
 
   useEffect(() => {
@@ -235,10 +252,15 @@ export default function App(): JSX.Element {
     outcomeId: string,
     amount: number
   ) => {
+    if (!authToken) {
+      throw new Error("Please log in to place a bet");
+    }
+
     const response = await fetch(`/api/markets/${marketId}/bets`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...getAuthHeaders(),
       },
       body: JSON.stringify({
         outcomeId,
@@ -251,7 +273,17 @@ export default function App(): JSX.Element {
       throw new Error(errorBody?.error || "Failed to place bet");
     }
 
-    await loadMarkets();
+    const wagerResponse = await response.json();
+    await Promise.all([loadMarkets(), loadLeaderboard()]);
+
+    setCurrentLoggedInUser((currentUser) =>
+      currentUser
+        ? {
+            ...currentUser,
+            balance: Number(wagerResponse.userBalance),
+          }
+        : currentUser
+    );
   };
 
   const castVote = async (marketId: string, voteType: "up" | "down") => {
@@ -308,7 +340,9 @@ export default function App(): JSX.Element {
   };
 
   const handleCreatePost = async () => {
-    if (!newTitle || !newContent || !newLeft || !newRight) return;
+    if (!newTitle || !newContent || !newLeft || !newRight || !newCloseTime) {
+      return;
+    }
 
     try {
       setErrorMessage("");
@@ -323,6 +357,7 @@ export default function App(): JSX.Element {
           description: newContent,
           outcome1: newLeft,
           outcome2: newRight,
+          closesAt: newCloseTime,
         }),
       });
 
@@ -335,9 +370,10 @@ export default function App(): JSX.Element {
       setNewContent("");
       setNewLeft("");
       setNewRight("");
+      setNewCloseTime("");
       setShowCreateModal(false);
 
-      await loadMarkets();
+      await refreshAppData();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to create market";
@@ -366,7 +402,7 @@ export default function App(): JSX.Element {
       <div className="banner">
         <img src={banner} alt="Website Banner" />
         <h1>G R I N G A M B L I N G</h1>
-        <Currency balance={currentLoggedInUser?.balance ?? 0} />
+        <Currency acorns={currentLoggedInUser?.balance ?? 0} />
       </div>
 
       <div className="button-area">
@@ -423,6 +459,7 @@ export default function App(): JSX.Element {
                 marketId={post.id}
                 title={post.title}
                 content={post.content}
+                closesAt={post.closesAt}
                 leftOutcomeId={post.leftOutcomeId}
                 leftLabel={post.leftLabel}
                 leftTotal={post.leftTotal}
@@ -451,7 +488,13 @@ export default function App(): JSX.Element {
               marginRight: "20px",
             }}
           >
-            <Leaderboard players={fakePlayers} />
+            <Leaderboard
+              players={leaderboardUsers.map((user) => ({
+                id: user.id,
+                username: user.username,
+                acorns: Number(user.balance),
+              }))}
+            />
           </div>
         </div>
       </div>
@@ -518,6 +561,13 @@ export default function App(): JSX.Element {
               style={{ padding: "8px" }}
             />
 
+            <input
+              type="datetime-local"
+              value={newCloseTime}
+              onChange={(e) => setNewCloseTime(e.target.value)}
+              style={{ padding: "8px" }}
+            />
+
             <Button
               backgroundColor={backgroundColor}
               textColor={textcolor}
@@ -559,6 +609,7 @@ export default function App(): JSX.Element {
                 setAuthToken(token);
                 setCurrentLoggedInUser(user);
                 setShowLoginModal(false);
+                void refreshAppData();
               }}
             />
           </div>
@@ -592,6 +643,8 @@ export default function App(): JSX.Element {
                 localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
                 setAuthToken(token);
                 setCurrentLoggedInUser(user);
+                setShowRegisterModal(false);
+                void refreshAppData();
               }}
             />
           </div>

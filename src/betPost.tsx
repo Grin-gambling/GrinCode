@@ -10,6 +10,7 @@ type PostProps = {
   pillShape?: boolean;
   title: string;
   content: string;
+  closesAt: string;
   betBarColor?: string;
   leftOutcomeId: string;
   leftLabel: string;
@@ -30,6 +31,32 @@ type PostProps = {
   startAllTimers: boolean;
 };
 
+function formatTimeRemaining(milliseconds: number) {
+  if (milliseconds <= 0) {
+    return "Closed";
+  }
+
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  if (days > 0) {
+    return `${days}d ${hours}h ${minutes}m`;
+  }
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${seconds}s`;
+  }
+
+  if (minutes > 0) {
+    return `${minutes}m ${seconds}s`;
+  }
+
+  return `${seconds}s`;
+}
+
 export default function Post({
   marketId,
   backgroundColor,
@@ -38,6 +65,7 @@ export default function Post({
   pillShape,
   title,
   content,
+  closesAt,
   betBarColor,
   leftOutcomeId,
   leftLabel,
@@ -55,9 +83,12 @@ export default function Post({
 }: PostProps) {
   const [showComments, setShowComments] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
-  const [hasEnded, setHasEnded] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(5);
-  const [timerStarted, setTimerStarted] = useState(false);
+  const [hasEnded, setHasEnded] = useState(
+    new Date(closesAt).getTime() <= Date.now()
+  );
+  const [timeLeftMs, setTimeLeftMs] = useState(() =>
+    Math.max(new Date(closesAt).getTime() - Date.now(), 0)
+  );
   const [showModal, setShowModal] = useState(false);
   const [selectedSide, setSelectedSide] = useState<"yes" | "no" | null>(null);
   const [wagerAmount, setWagerAmount] = useState<number | "">("");
@@ -81,28 +112,34 @@ export default function Post({
   }, [showModal, selectedSide]);
 
   useEffect(() => {
-    if (startAllTimers) {
-      setTimerStarted(true);
-    }
-  }, [startAllTimers]);
-
-  useEffect(() => {
-    if (!timerStarted) return;
-
-    if (timeLeft <= 0) {
-      if (!hasEnded) {
-        setShowPopup(true);
-        setHasEnded(true);
-      }
+    if (!startAllTimers) {
       return;
     }
 
-    const interval = setInterval(() => {
-      setTimeLeft((currentTime) => currentTime - 1);
-    }, 1000);
+    const updateTimeLeft = () => {
+      const nextTimeLeft = Math.max(new Date(closesAt).getTime() - Date.now(), 0);
+      setTimeLeftMs(nextTimeLeft);
 
+      if (nextTimeLeft <= 0) {
+        setHasEnded((currentValue) => {
+          if (!currentValue) {
+            setShowPopup(true);
+          }
+
+          return true;
+        });
+      }
+    };
+
+    updateTimeLeft();
+
+    if (new Date(closesAt).getTime() <= Date.now()) {
+      return;
+    }
+
+    const interval = setInterval(updateTimeLeft, 1000);
     return () => clearInterval(interval);
-  }, [timerStarted, timeLeft, hasEnded]);
+  }, [startAllTimers, closesAt]);
 
   useEffect(() => {
     if (!showComments || hasLoadedComments) {
@@ -214,7 +251,7 @@ export default function Post({
           <div
             style={{ fontFamily: "Futura", fontSize: "14px", fontWeight: "bold" }}
           >
-            Time left in bet: {timeLeft > 0 ? `${timeLeft}s` : "Over"}
+            Time remaining: {formatTimeRemaining(timeLeftMs)}
           </div>
         </div>
       </div>
@@ -231,6 +268,10 @@ export default function Post({
       <div style={styles.barContainer as React.CSSProperties}>
         <div
           onClick={() => {
+            if (hasEnded) {
+              return;
+            }
+
             setSelectedSide("yes");
             setShowModal(true);
           }}
@@ -241,7 +282,7 @@ export default function Post({
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: betBarColor || "#4caf50",
-            cursor: "pointer",
+            cursor: hasEnded ? "not-allowed" : "pointer",
           }}
         >
           {yesPercent > 5 ? `${yesPercent.toFixed(1)}%` : ""}
@@ -249,6 +290,10 @@ export default function Post({
 
         <div
           onClick={() => {
+            if (hasEnded) {
+              return;
+            }
+
             setSelectedSide("no");
             setShowModal(true);
           }}
@@ -262,7 +307,7 @@ export default function Post({
             paddingLeft: noPercent < 5 ? "0px" : "6px",
             color: "#000",
             transition: "width 0.3s ease",
-            cursor: "pointer",
+            cursor: hasEnded ? "not-allowed" : "pointer",
           }}
         >
           {noPercent > 5 ? `${noPercent.toFixed(1)}%` : ""}
@@ -398,7 +443,7 @@ export default function Post({
             <p>No comments yet.</p>
           ) : (
             comments.map((comment) => (
-              <p key={comment.id}>💬 {comment.body}</p>
+              <p key={comment.id}>Comment: {comment.body}</p>
             ))
           )}
         </div>
@@ -476,7 +521,7 @@ export default function Post({
               <input
                 ref={inputRef}
                 type="number"
-                placeholder={`Enter amount for ${selectedLabel}`}
+                placeholder={`Enter acorns for ${selectedLabel}`}
                 value={wagerAmount}
                 onChange={(event) => {
                   const value = event.target.value;
@@ -499,6 +544,7 @@ export default function Post({
               width="200px"
               onClick={async () => {
                 if (
+                  hasEnded ||
                   !selectedSide ||
                   wagerAmount === "" ||
                   wagerAmount <= 0 ||
@@ -530,7 +576,7 @@ export default function Post({
             >
               {isSubmittingBet
                 ? "Placing Bet..."
-                : `Place ${wagerAmount === "" ? 0 : wagerAmount}pt Bet`}
+                : `Place ${wagerAmount === "" ? 0 : wagerAmount} acorn bet`}
             </Button>
           </div>
         </div>
@@ -560,7 +606,7 @@ export default function Post({
               color: "white",
             }}
           >
-            ⏰ Time is up - betting is now closed!
+            Time is up. Betting is now closed.
           </div>
         </div>
       )}

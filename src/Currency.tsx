@@ -1,12 +1,12 @@
 type CurrencyProps = {
-  balance: number;
+  acorns: number;
 };
 
-export default function Currency({ balance }: CurrencyProps) {
+export default function Currency({ acorns }: CurrencyProps) {
   return (
     <div style={styles.container}>
-      <span style={styles.label}>Balance</span>
-      <span style={styles.amount}>${balance}</span>
+      <span style={styles.label}>Acorns</span>
+      <span style={styles.amount}>{acorns}</span>
     </div>
   );
 }
