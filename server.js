@@ -11,6 +11,7 @@ import {
   logoutUser,
   registerUser,
 } from './services/authService.js';
+import { getTopUsersByBalance } from './models/userModel.js';
 
 const app = express();
 const PORT = 3001;
@@ -19,6 +20,11 @@ app.use(cors());
 app.use(express.json());
 
 async function ensureSupportTables() {
+  await db.query(`
+    ALTER TABLE markets
+    ADD COLUMN IF NOT EXISTS closes_at TIMESTAMP
+  `);
+
   await db.query(`
     CREATE TABLE IF NOT EXISTS comments (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -143,13 +149,14 @@ app.post('/api/auth/logout', authMiddleware, async (req, res) => {
 
 app.post('/api/markets', async (req, res) => {
   try {
-    const { question, description, outcome1, outcome2 } = req.body;
+    const { question, description, outcome1, outcome2, closesAt } = req.body;
 
     const market = await createMarket(
       question,
       description,
       outcome1,
-      outcome2
+      outcome2,
+      closesAt
     );
 
     res.status(201).json(market);
@@ -165,6 +172,7 @@ app.get('/api/markets', async (req, res) => {
         m.id,
         m.question,
         m.description,
+        m.closes_at,
         o.id AS outcome_id,
         o.label,
         COALESCE(SUM(w.amount), 0)::float AS total_amount,
@@ -181,13 +189,22 @@ app.get('/api/markets', async (req, res) => {
       FROM markets m
       JOIN outcomes o ON m.id = o.market_id
       LEFT JOIN wagers w ON o.id = w.outcome_id
-      GROUP BY m.id, m.question, m.description, m.created_at, o.id, o.label
+      GROUP BY m.id, m.question, m.description, m.closes_at, m.created_at, o.id, o.label
       ORDER BY m.created_at DESC, o.label ASC
     `);
 
     res.json(result.rows);
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/leaderboard', async (_req, res) => {
+  try {
+    const users = await getTopUsersByBalance(10);
+    res.json(users);
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -223,12 +240,12 @@ app.post('/api/markets/:marketId/votes', authMiddleware, async (req, res) => {
   }
 });
 
-app.post('/api/markets/:marketId/bets', async (req, res) => {
+app.post('/api/markets/:marketId/bets', authMiddleware, async (req, res) => {
   try {
     const { marketId } = req.params;
     const { outcomeId, amount } = req.body;
 
-    const wager = await placeBet(marketId, outcomeId, amount);
+    const wager = await placeBet(req.user.id, marketId, outcomeId, amount);
     res.status(201).json(wager);
   } catch (err) {
     res.status(err.statusCode || 500).json({ error: err.message });

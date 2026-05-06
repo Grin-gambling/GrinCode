@@ -14,6 +14,7 @@ type BetPost = {
   id: string;
   title: string;
   content: string;
+  closesAt: string;
   leftOutcomeId: string;
   leftLabel: string;
   leftTotal: number;
@@ -27,6 +28,7 @@ type ApiMarketRow = {
   id: string;
   question: string;
   description: string;
+  closes_at: string;
   outcome_id: string;
   label: string;
   total_amount: number | string;
@@ -123,33 +125,49 @@ export default function App(): JSX.Element {
   const fontSize = 18;
 
   const [posts, setPosts] = useState<BetPost[]>([]);
+  const [leaderboardUsers, setLeaderboardUsers] = useState<LeaderboardUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newContent, setNewContent] = useState("");
   const [newLeft, setNewLeft] = useState("");
   const [newRight, setNewRight] = useState("");
+  const [newCloseTime, setNewCloseTime] = useState("");
+  const [startAllTimers] = useState(true);
 
   const [balance, setBalance] = useState(1000);
 
   const loadMarkets = async () => {
+    const response = await fetch("/api/markets");
+
+    if (!response.ok) {
+      throw new Error("Failed to load markets");
+    }
+
+    const rows: ApiMarketRow[] = await response.json();
+    setPosts(mapMarketRowsToPosts(rows));
+  };
+
+  const loadLeaderboard = async () => {
+    const response = await fetch("/api/leaderboard");
+
+    if (!response.ok) {
+      throw new Error("Failed to load leaderboard");
+    }
+
+    const rows: LeaderboardUser[] = await response.json();
+    setLeaderboardUsers(rows);
+  };
+
+  const refreshAppData = async () => {
     try {
       setIsLoading(true);
       setErrorMessage("");
-
-      const response = await fetch("/api/markets");
-
-      if (!response.ok) {
-        throw new Error("Failed to load markets");
-      }
-
-      const rows: ApiMarketRow[] = await response.json();
-      setPosts(mapMarketRowsToPosts(rows));
+      await Promise.all([loadMarkets(), loadLeaderboard()]);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Failed to load markets";
+        error instanceof Error ? error.message : "Failed to load app data";
       setErrorMessage(message);
     } finally {
       setIsLoading(false);
@@ -157,7 +175,7 @@ export default function App(): JSX.Element {
   };
 
   useEffect(() => {
-    void loadMarkets();
+    void refreshAppData();
   }, []);
 
   const placeBet = async (
@@ -165,10 +183,15 @@ export default function App(): JSX.Element {
     outcomeId: string,
     amount: number
   ) => {
+    if (!authToken) {
+      throw new Error("Please log in to place a bet");
+    }
+
     const response = await fetch(`/api/markets/${marketId}/bets`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...getAuthHeaders(),
       },
       body: JSON.stringify({
         outcomeId,
@@ -186,7 +209,9 @@ export default function App(): JSX.Element {
   };
 
   const handleCreatePost = async () => {
-    if (!newTitle || !newContent || !newLeft || !newRight) return;
+    if (!newTitle || !newContent || !newLeft || !newRight || !newCloseTime) {
+      return;
+    }
 
     try {
       setErrorMessage("");
@@ -217,7 +242,7 @@ export default function App(): JSX.Element {
       setNewEndTime("");
       setShowCreateModal(false);
 
-      await loadMarkets();
+      await refreshAppData();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to create market";
@@ -450,6 +475,7 @@ export default function App(): JSX.Element {
               onLoginSuccess={(name) => {          // ✅ add this
                 setCurrentLoggedInUser(name);
                 setShowLoginModal(false);
+                void refreshAppData();
               }}
             />
           </div>

@@ -1,7 +1,7 @@
 type Player = {
   id: string;
-  name: string;
-  balance: number;
+  username: string;
+  acorns: number;
 };
 
 interface LeaderboardProps {
@@ -9,22 +9,21 @@ interface LeaderboardProps {
 }
 
 export default function Leaderboard({ players }: LeaderboardProps) {
-  // sort highest → lowest
-  const sorted = [...players].sort((a, b) => b.balance - a.balance);
+  const sorted = [...players].sort((a, b) => b.acorns - a.acorns);
+
   return (
     <div style={styles.container}>
       <h2 style={styles.title}>Leaderboard</h2>
       {sorted.map((player, index) => (
         <div key={player.id} style={styles.row}>
-          <span>{index + 1}. {player.name}</span>
-          <span>{player.balance} </span>
+          <span>{index + 1}. {player.username}</span>
+          <span>{player.acorns} acorns</span>
         </div>
       ))}
     </div>
   );
 }
 
-// Styling for leaderboard
 const styles: Record<string, React.CSSProperties> = {
   container: {
     width: "250px",

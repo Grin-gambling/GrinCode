@@ -45,6 +45,18 @@ async function updateBalance(userId, newBalance, client = db) {
   return result.rows[0];
 }
 
+async function getTopUsersByBalance(limit = 10, client = db) {
+  const query = `
+    SELECT id, username, balance
+    FROM users
+    ORDER BY balance DESC, username ASC
+    LIMIT $1
+  `;
+
+  const result = await client.query(query, [limit]);
+  return result.rows;
+}
+
 async function deleteUser(userId, client = db) {
   const query = `
     DELETE FROM users
@@ -61,5 +73,6 @@ export {
   getUserById,
   getUserByEmail,
   updateBalance,
+  getTopUsersByBalance,
   deleteUser,
 };

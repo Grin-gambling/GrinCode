@@ -5,14 +5,14 @@ import db from '../db/db.js';
 
 
 // Create a new market 
-async function createMarket(question, description, client = db) {
+async function createMarket(question, description, closesAt, client = db) {
   const query = `
-    INSERT INTO markets (question, description)
-    VALUES ($1, $2)
-    RETURNING id, user_id, question, market_type, status, created_at
+    INSERT INTO markets (question, description, closes_at)
+    VALUES ($1, $2, $3)
+    RETURNING id, user_id, question, description, market_type, status, closes_at, created_at
   `;
 
-  const result = await client.query(query, [question, description]);
+  const result = await client.query(query, [question, description, closesAt]);
   return result.rows[0];
 }
 

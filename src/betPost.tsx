@@ -225,6 +225,10 @@ card: {
         {/* LEFT (YES) */}
         <div
           onClick={() => {
+            if (hasEnded) {
+              return;
+            }
+
             setSelectedSide("yes");
             setShowModal(true);
 
@@ -236,7 +240,7 @@ card: {
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: betBarColor || "#4caf50",
-            cursor: "pointer",
+            cursor: hasEnded ? "not-allowed" : "pointer",
           }}
           
         >
@@ -246,6 +250,10 @@ card: {
         {/* RIGHT (NO) */}
         <div
           onClick={() => {
+            if (hasEnded) {
+              return;
+            }
+
             setSelectedSide("no");
             setShowModal(true);
 
@@ -260,7 +268,7 @@ card: {
             paddingLeft: noPercent < 5 ? "0px" : "6px",           
             color: "#000",
             transition: "width 0.3s ease",
-            cursor: "pointer",
+            cursor: hasEnded ? "not-allowed" : "pointer",
           }}
         >
           {noPercent > 5 ? `${noPercent.toFixed(1)}%` : ""}
@@ -464,6 +472,7 @@ card: {
               width="200px"
               onClick={async () => {
                 if (
+                  hasEnded ||
                   !selectedSide ||
                   wagerAmount === "" ||
                   wagerAmount <= 0 ||
@@ -499,7 +508,7 @@ card: {
             >
               {isSubmittingBet
                 ? "Placing Bet..."
-                : `Place ${wagerAmount === "" ? 0 : wagerAmount}pt Bet`}
+                : `Place ${wagerAmount === "" ? 0 : wagerAmount} acorn bet`}
             </Button>
 
           </div>

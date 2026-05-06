@@ -1,5 +1,6 @@
 import db from '../db/db.js';
 import { createWager } from '../models/wagerModel.js';
+import { updateBalance } from '../models/userModel.js';
 
 function createError(message, statusCode) {
   const error = new Error(message);
@@ -7,11 +8,11 @@ function createError(message, statusCode) {
   return error;
 }
 
-async function placeBet(marketId, outcomeId, amount) {
+async function placeBet(userId, marketId, outcomeId, amount) {
   const numericAmount = Number(amount);
 
-  if (!marketId || !outcomeId) {
-    throw createError('Market ID and outcome ID are required', 400);
+  if (!userId || !marketId || !outcomeId) {
+    throw createError('User ID, market ID, and outcome ID are required', 400);
   }
 
   if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
@@ -25,7 +26,7 @@ async function placeBet(marketId, outcomeId, amount) {
 
     const outcomeResult = await client.query(
       `
-        SELECT o.id, o.market_id, m.status
+        SELECT o.id, o.market_id, m.status, m.closes_at
         FROM outcomes o
         JOIN markets m ON m.id = o.market_id
         WHERE o.id = $1 AND o.market_id = $2
@@ -41,6 +42,30 @@ async function placeBet(marketId, outcomeId, amount) {
 
     if (outcome.status !== 'open') {
       throw createError('This market is no longer open for betting', 400);
+    }
+
+    if (outcome.closes_at && new Date(outcome.closes_at).getTime() <= Date.now()) {
+      throw createError('This market is no longer open for betting', 400);
+    }
+
+    const userResult = await client.query(
+      `
+        SELECT id, balance
+        FROM users
+        WHERE id = $1
+        FOR UPDATE
+      `,
+      [userId]
+    );
+
+    const user = userResult.rows[0];
+
+    if (!user) {
+      throw createError('User not found', 404);
+    }
+
+    if (Number(user.balance) < numericAmount) {
+      throw createError('Not enough acorns to place this bet', 400);
     }
 
     const totalsResult = await client.query(
@@ -71,16 +96,25 @@ async function placeBet(marketId, outcomeId, amount) {
     const oddsAtBet = Math.max(1.001, impliedProbability);
 
     const wager = await createWager(
-      null,
+      userId,
       outcomeId,
       numericAmount,
       oddsAtBet,
       client
     );
 
+    const updatedUser = await updateBalance(
+      userId,
+      Number(user.balance) - numericAmount,
+      client
+    );
+
     await client.query('COMMIT');
 
-    return wager;
+    return {
+      ...wager,
+      userBalance: Number(updatedUser.balance),
+    };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
