@@ -3,7 +3,7 @@ import cors from 'cors';
 import db from './db/db.js';
 import { addComment, listComments } from './services/commentService.js';
 import { placeBet } from './services/bettingService.js';
-import { createMarket } from './services/marketService.js';
+import { autoResolveExpiredMarkets, createMarket, resolveMarket } from './services/marketService.js';
 import { castVote } from './services/voteService.js';
 import {
   getUserBySessionToken,
@@ -23,6 +23,12 @@ async function ensureSupportTables() {
   await db.query(`
     ALTER TABLE markets
     ADD COLUMN IF NOT EXISTS closes_at TIMESTAMP
+  `);
+
+  await db.query(`
+    ALTER TABLE markets
+    ALTER COLUMN closes_at TYPE TIMESTAMPTZ
+    USING closes_at AT TIME ZONE 'UTC'
   `);
 
   await db.query(`
@@ -188,12 +194,20 @@ app.post('/api/markets', async (req, res) => {
 
 app.get('/api/markets', async (req, res) => {
   try {
+    await autoResolveExpiredMarkets();
+
     const result = await db.query(`
       SELECT
         m.id,
         m.question,
         m.description,
+        CASE
+          WHEN m.status = 'resolved' THEN 'resolved'
+          WHEN m.closes_at IS NOT NULL AND m.closes_at <= NOW() THEN 'closed'
+          ELSE m.status
+        END AS status,
         m.closes_at,
+        winner.id AS winning_outcome_id,
         o.id AS outcome_id,
         o.label,
         COALESCE(SUM(w.amount), 0)::float AS total_amount,
@@ -209,8 +223,9 @@ app.get('/api/markets', async (req, res) => {
         )::int AS total_downvotes
       FROM markets m
       JOIN outcomes o ON m.id = o.market_id
+      LEFT JOIN outcomes winner ON winner.market_id = m.id AND winner.is_winner = TRUE
       LEFT JOIN wagers w ON o.id = w.outcome_id
-      GROUP BY m.id, m.question, m.description, m.closes_at, m.created_at, o.id, o.label
+      GROUP BY m.id, m.question, m.description, m.status, m.closes_at, m.created_at, winner.id, o.id, o.label
       ORDER BY m.created_at DESC, o.label ASC
     `);
 
@@ -268,6 +283,19 @@ app.post('/api/markets/:marketId/bets', authMiddleware, async (req, res) => {
 
     const wager = await placeBet(req.user.id, marketId, outcomeId, amount);
     res.status(201).json(wager);
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
+app.post('/api/markets/:marketId/resolve', authMiddleware, async (req, res) => {
+  try {
+    const resolved = await resolveMarket(
+      req.params.marketId,
+      req.body.winningOutcomeId
+    );
+
+    res.status(200).json(resolved);
   } catch (err) {
     res.status(err.statusCode || 500).json({ error: err.message });
   }

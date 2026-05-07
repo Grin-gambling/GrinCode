@@ -18,14 +18,39 @@ async function createWager(user_id, outcome_id, amount, odds_at_bet, client = db
   return result.rows[0];
 }
 
-// find 
+async function listWagersForMarket(marketId, client = db) {
+  const query = `
+    SELECT
+      w.id,
+      w.user_id,
+      w.outcome_id,
+      w.amount,
+      w.odds_at_bet,
+      w.status
+    FROM wagers w
+    JOIN outcomes o ON o.id = w.outcome_id
+    WHERE o.market_id = $1
+    ORDER BY w.created_at ASC
+  `;
 
-// help to update odds for market/outcomes
+  const result = await client.query(query, [marketId]);
+  return result.rows;
+}
 
-// check if winner or loser (called when market closes/resolves)
+async function updateWagerStatus(wagerId, status, client = db) {
+  const query = `
+    UPDATE wagers
+    SET status = $1
+    WHERE id = $2
+    RETURNING id, user_id, outcome_id, amount, odds_at_bet, status, created_at
+  `;
 
-// mark as win or lose, and trigger transaction
+  const result = await client.query(query, [status, wagerId]);
+  return result.rows[0];
+}
 
 export {
   createWager,
+  listWagersForMarket,
+  updateWagerStatus,
 };

@@ -11,6 +11,7 @@ type PostProps = {
   title: string;
   content: string;
   closesAt: string;
+  status: "open" | "closed" | "resolved";
   betBarColor?: string;
   leftOutcomeId: string;
   leftLabel: string;
@@ -18,6 +19,7 @@ type PostProps = {
   rightOutcomeId: string;
   rightLabel: string;
   rightTotal: number;
+  winningOutcomeId: string | null;
   upvotes: number;
   downvotes: number;
   onPlaceBet: (
@@ -25,6 +27,7 @@ type PostProps = {
     outcomeId: string,
     amount: number
   ) => Promise<void>;
+  onResolveMarket: (marketId: string, winningOutcomeId: string) => Promise<void>;
   onVote: (marketId: string, voteType: "up" | "down") => Promise<void>;
   onLoadComments: (marketId: string) => Promise<MarketComment[]>;
   onAddComment: (marketId: string, body: string) => Promise<MarketComment>;
@@ -66,6 +69,7 @@ export default function Post({
   title,
   content,
   closesAt,
+  status,
   betBarColor,
   leftOutcomeId,
   leftLabel,
@@ -73,9 +77,11 @@ export default function Post({
   rightOutcomeId,
   rightLabel,
   rightTotal,
+  winningOutcomeId,
   upvotes,
   downvotes,
   onPlaceBet,
+  onResolveMarket,
   onVote,
   onLoadComments,
   onAddComment,
@@ -102,6 +108,8 @@ export default function Post({
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isSubmittingVote, setIsSubmittingVote] = useState(false);
   const [voteError, setVoteError] = useState("");
+  const [resolutionError, setResolutionError] = useState("");
+  const [isResolving, setIsResolving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -191,6 +199,13 @@ export default function Post({
   const total = yesTotal + noTotal;
   const yesPercent = total === 0 ? 50 : (yesTotal / total) * 100;
   const noPercent = total === 0 ? 50 : (noTotal / total) * 100;
+  const marketIsClosed = status === "closed" || status === "resolved" || hasEnded;
+  const winningLabel =
+    winningOutcomeId === leftOutcomeId
+      ? leftLabel
+      : winningOutcomeId === rightOutcomeId
+        ? rightLabel
+        : null;
 
   const styles = {
     card: {
@@ -268,7 +283,7 @@ export default function Post({
       <div style={styles.barContainer as React.CSSProperties}>
         <div
           onClick={() => {
-            if (hasEnded) {
+            if (marketIsClosed) {
               return;
             }
 
@@ -282,7 +297,7 @@ export default function Post({
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: betBarColor || "#4caf50",
-            cursor: hasEnded ? "not-allowed" : "pointer",
+            cursor: marketIsClosed ? "not-allowed" : "pointer",
           }}
         >
           {yesPercent > 5 ? `${yesPercent.toFixed(1)}%` : ""}
@@ -290,7 +305,7 @@ export default function Post({
 
         <div
           onClick={() => {
-            if (hasEnded) {
+            if (marketIsClosed) {
               return;
             }
 
@@ -307,7 +322,7 @@ export default function Post({
             paddingLeft: noPercent < 5 ? "0px" : "6px",
             color: "#000",
             transition: "width 0.3s ease",
-            cursor: hasEnded ? "not-allowed" : "pointer",
+            cursor: marketIsClosed ? "not-allowed" : "pointer",
           }}
         >
           {noPercent > 5 ? `${noPercent.toFixed(1)}%` : ""}
@@ -387,6 +402,65 @@ export default function Post({
       </div>
 
       {voteError && <p style={{ color: "#DA291C" }}>{voteError}</p>}
+      {resolutionError && <p style={{ color: "#DA291C" }}>{resolutionError}</p>}
+
+      {status === "closed" && (
+        <div style={{ marginTop: "12px", display: "flex", gap: "10px", alignItems: "center" }}>
+          <span style={{ fontWeight: "bold" }}>Resolve market:</span>
+          <Button
+            backgroundColor="#4caf50"
+            textColor="#fff"
+            fontSize={14}
+            onClick={async () => {
+              if (isResolving) return;
+
+              setResolutionError("");
+              setIsResolving(true);
+
+              try {
+                await onResolveMarket(marketId, leftOutcomeId);
+              } catch (error) {
+                setResolutionError(
+                  error instanceof Error ? error.message : "Failed to resolve market"
+                );
+              } finally {
+                setIsResolving(false);
+              }
+            }}
+          >
+            {isResolving ? "Resolving..." : `Resolve ${leftLabel}`}
+          </Button>
+          <Button
+            backgroundColor="#00DBD7"
+            textColor="#000"
+            fontSize={14}
+            onClick={async () => {
+              if (isResolving) return;
+
+              setResolutionError("");
+              setIsResolving(true);
+
+              try {
+                await onResolveMarket(marketId, rightOutcomeId);
+              } catch (error) {
+                setResolutionError(
+                  error instanceof Error ? error.message : "Failed to resolve market"
+                );
+              } finally {
+                setIsResolving(false);
+              }
+            }}
+          >
+            {isResolving ? "Resolving..." : `Resolve ${rightLabel}`}
+          </Button>
+        </div>
+      )}
+
+      {status === "resolved" && winningLabel && (
+        <p style={{ marginTop: "12px", fontWeight: "bold", color: "#2f7d32" }}>
+          Resolved winner: {winningLabel}
+        </p>
+      )}
 
       {showComments && (
         <div style={styles.comments}>
@@ -544,7 +618,7 @@ export default function Post({
               width="200px"
               onClick={async () => {
                 if (
-                  hasEnded ||
+                  marketIsClosed ||
                   !selectedSide ||
                   wagerAmount === "" ||
                   wagerAmount <= 0 ||

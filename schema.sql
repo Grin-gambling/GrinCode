@@ -24,6 +24,7 @@ CREATE TABLE markets (
   description TEXT NOT NULL, -- elaboration of what the market it
   market_type TEXT NOT NULL DEFAULT 'binary' CHECK (market_type IN ('binary', 'multiple_choice')), -- type of bet
   status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'closed', 'resolved')), -- open closed resolved
+  closes_at TIMESTAMPTZ, -- when betting closes, timezone-aware
   created_at TIMESTAMP DEFAULT NOW() -- time created
 );
 

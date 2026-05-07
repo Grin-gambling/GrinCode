@@ -13,12 +13,14 @@ type BetPost = {
   title: string;
   content: string;
   closesAt: string;
+  status: "open" | "closed" | "resolved";
   leftOutcomeId: string;
   leftLabel: string;
   leftTotal: number;
   rightOutcomeId: string;
   rightLabel: string;
   rightTotal: number;
+  winningOutcomeId: string | null;
   upvotes: number;
   downvotes: number;
 };
@@ -40,7 +42,9 @@ type ApiMarketRow = {
   id: string;
   question: string;
   description: string;
+  status: "open" | "closed" | "resolved";
   closes_at: string;
+  winning_outcome_id: string | null;
   outcome_id: string;
   label: string;
   total_amount: number | string;
@@ -64,6 +68,16 @@ type LeaderboardUser = {
 
 const AUTH_TOKEN_STORAGE_KEY = "grincodeAuthToken";
 
+function toLocalDateTimeIso(localDateTimeValue: string) {
+  const localDate = new Date(localDateTimeValue);
+
+  if (Number.isNaN(localDate.getTime())) {
+    return "";
+  }
+
+  return localDate.toISOString();
+}
+
 function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
   const groupedMarkets = new Map<
     string,
@@ -72,6 +86,8 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
       title: string;
       content: string;
       closesAt: string;
+      status: "open" | "closed" | "resolved";
+      winningOutcomeId: string | null;
       upvotes: number;
       downvotes: number;
       outcomes: Array<{
@@ -99,6 +115,8 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
       title: row.question,
       content: row.description,
       closesAt: row.closes_at,
+      status: row.status,
+      winningOutcomeId: row.winning_outcome_id,
       upvotes: Number(row.total_upvotes),
       downvotes: Number(row.total_downvotes),
       outcomes: [
@@ -124,12 +142,14 @@ function mapMarketRowsToPosts(rows: ApiMarketRow[]): BetPost[] {
         title: market.title,
         content: market.content,
         closesAt: market.closesAt,
+        status: market.status,
         leftOutcomeId: leftOutcome.id,
         leftLabel: leftOutcome.label,
         leftTotal: leftOutcome.totalAmount,
         rightOutcomeId: rightOutcome.id,
         rightLabel: rightOutcome.label,
         rightTotal: rightOutcome.totalAmount,
+        winningOutcomeId: market.winningOutcomeId,
         upvotes: market.upvotes,
         downvotes: market.downvotes,
       };
@@ -184,6 +204,27 @@ export default function App(): JSX.Element {
 
     const rows: ApiMarketRow[] = await response.json();
     setPosts(mapMarketRowsToPosts(rows));
+  };
+
+  const loadCurrentUser = async () => {
+    if (!authToken) {
+      setCurrentLoggedInUser(null);
+      return;
+    }
+
+    const response = await fetch("/api/auth/me", {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+      setAuthToken(null);
+      setCurrentLoggedInUser(null);
+      return;
+    }
+
+    const responseBody = await response.json();
+    setCurrentLoggedInUser(responseBody.user);
   };
 
   const loadLeaderboard = async () => {
@@ -247,7 +288,7 @@ export default function App(): JSX.Element {
 
     let isActive = true;
 
-    const loadCurrentUser = async () => {
+    const loadCurrentUserForEffect = async () => {
       try {
         const response = await fetch("/api/auth/me", {
           headers: getAuthHeaders(),
@@ -275,7 +316,7 @@ export default function App(): JSX.Element {
       }
     };
 
-    void loadCurrentUser();
+    void loadCurrentUserForEffect();
 
     return () => {
       isActive = false;
@@ -299,8 +340,12 @@ export default function App(): JSX.Element {
   }, [currentAcorns, activeView]);
 
   useEffect(() => {
+    if (activeView !== "minigames") {
+      return;
+    }
+
     setMinigameSrc(`/grin-gamblers.html?balance=${currentAcorns}`);
-  }, [authToken]);
+  }, [activeView, authToken, currentLoggedInUser?.id]);
 
   useEffect(() => {
     const handleMinigameMessage = (event: MessageEvent<MinigameMessage>) => {
@@ -412,6 +457,28 @@ export default function App(): JSX.Element {
     await loadMarkets();
   };
 
+  const resolveMarket = async (marketId: string, winningOutcomeId: string) => {
+    if (!authToken) {
+      throw new Error("Please log in to resolve a market");
+    }
+
+    const response = await fetch(`/api/markets/${marketId}/resolve`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ winningOutcomeId }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.error || "Failed to resolve market");
+    }
+
+    await Promise.all([loadMarkets(), loadLeaderboard(), loadCurrentUser()]);
+  };
+
   const loadComments = async (marketId: string): Promise<MarketComment[]> => {
     const response = await fetch(`/api/markets/${marketId}/comments`);
 
@@ -450,6 +517,11 @@ export default function App(): JSX.Element {
 
     try {
       setErrorMessage("");
+      const closesAtIso = toLocalDateTimeIso(newCloseTime);
+
+      if (!closesAtIso) {
+        throw new Error("Invalid close time");
+      }
 
       const response = await fetch("/api/markets", {
         method: "POST",
@@ -461,7 +533,7 @@ export default function App(): JSX.Element {
           description: newContent,
           outcome1: newLeft,
           outcome2: newRight,
-          closesAt: newCloseTime,
+          closesAt: closesAtIso,
         }),
       });
 
@@ -587,15 +659,18 @@ export default function App(): JSX.Element {
                   title={post.title}
                   content={post.content}
                   closesAt={post.closesAt}
+                  status={post.status}
                   leftOutcomeId={post.leftOutcomeId}
                   leftLabel={post.leftLabel}
                   leftTotal={post.leftTotal}
                   rightOutcomeId={post.rightOutcomeId}
                   rightLabel={post.rightLabel}
                   rightTotal={post.rightTotal}
+                  winningOutcomeId={post.winningOutcomeId}
                   upvotes={post.upvotes}
                   downvotes={post.downvotes}
                   onPlaceBet={placeBet}
+                  onResolveMarket={resolveMarket}
                   onVote={castVote}
                   onLoadComments={loadComments}
                   onAddComment={addComment}

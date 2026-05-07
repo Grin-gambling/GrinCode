@@ -41,8 +41,31 @@ async function setWinner(outcomeID, client = db) {
   return result.rows[0];
 }
 
+async function clearWinnersForMarket(marketId, client = db) {
+  const query = `
+    UPDATE outcomes
+    SET is_winner = FALSE
+    WHERE market_id = $1
+  `;
+
+  await client.query(query, [marketId]);
+}
+
+async function getOutcomeById(outcomeID, client = db) {
+  const query = `
+    SELECT id, market_id, label, odds, is_winner
+    FROM outcomes
+    WHERE id = $1
+  `;
+
+  const result = await client.query(query, [outcomeID]);
+  return result.rows[0];
+}
+
 export {
   createOutcome,
   changeOdds,
   setWinner,
+  clearWinnersForMarket,
+  getOutcomeById,
 };

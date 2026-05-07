@@ -8,7 +8,7 @@ import db from '../db/db.js';
 async function createMarket(question, description, closesAt, client = db) {
   const query = `
     INSERT INTO markets (question, description, closes_at)
-    VALUES ($1, $2, $3)
+    VALUES ($1, $2, $3::timestamptz)
     RETURNING id, user_id, question, description, market_type, status, closes_at, created_at
   `;
 
@@ -21,10 +21,22 @@ async function resolveMarket(marketID, client = db) {
   const query = `
     UPDATE markets
     SET status = 'closed'
-    WHERE id = marketID
+    WHERE id = $1
     RETURNING id, user_id, question, market_type, status, created_at
   `;
   // go in to table, find the one with the ID and set to closed
+
+  const result = await client.query(query, [marketID]);
+  return result.rows[0];
+}
+
+async function markMarketResolved(marketID, client = db) {
+  const query = `
+    UPDATE markets
+    SET status = 'resolved'
+    WHERE id = $1
+    RETURNING id, user_id, question, description, market_type, status, closes_at, created_at
+  `;
 
   const result = await client.query(query, [marketID]);
   return result.rows[0];
@@ -74,6 +86,7 @@ async function getMarketByQuestion(question, client = db) {
 export {
   createMarket,
   resolveMarket,
+  markMarketResolved,
   checkStatus,
   getMarketById,
   getMarketByQuestion,
