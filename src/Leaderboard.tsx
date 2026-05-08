@@ -1,3 +1,5 @@
+
+
 type Player = {
   id: string;
   username: string;
@@ -25,11 +27,13 @@ export default function Leaderboard({ players }: LeaderboardProps) {
 }
 
 const styles: Record<string, React.CSSProperties> = {
+  // Formatting for the entire leaderboard box
   container: {
     width: "250px",
     padding: "0px",
     fontFamily: "Futura, sans-serif",
   },
+  // Formatting for the title of the leaderboard
   title: {
     textAlign: "center",
     fontWeight: "bold",
@@ -38,6 +42,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: "20px",
     letterSpacing: "2px",
   },
+  // Formatting for each row of the leaderboard (username and acorn count)
   row: {
     display: "flex",
     justifyContent: "space-between",

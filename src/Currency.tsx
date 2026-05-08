@@ -1,9 +1,12 @@
+// Currency.tsx
+
 type CurrencyProps = {
   acorns: number;
 };
 
 export default function Currency({ acorns }: CurrencyProps) {
   return (
+    // Box in top right corner that displays the amount of acorns the user has
     <div style={styles.container}>
       <span style={styles.label}>Acorns</span>
       <span style={styles.amount}>{acorns}</span>
@@ -12,6 +15,7 @@ export default function Currency({ acorns }: CurrencyProps) {
 }
 
 const styles: Record<string, React.CSSProperties> = {
+  // Formatting for box in top right corner that displays the amount of acorns the user has
   container: {
     position: "absolute",
     top: "20px",
@@ -27,11 +31,13 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column" as const,
     alignItems: "flex-end",
   },
+  // Formatting the "balance" label (top right corner)
   label: {
     fontSize: "15px",
     opacity: 0.6,
     letterSpacing: "1px",
   },
+  // Formatting the amount of acorns
   amount: {
     fontSize: "18px",
     fontWeight: "bold",

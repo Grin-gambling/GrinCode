@@ -111,6 +111,7 @@ export default function Post({
   const [resolutionError, setResolutionError] = useState("");
   const [isResolving, setIsResolving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showReportPopup, setShowReportPopup] = useState(false);
 
   useEffect(() => {
     if (showModal && selectedSide && inputRef.current) {
@@ -390,15 +391,52 @@ export default function Post({
         </Button>
 
         <div style={{ marginLeft: "auto" }}>
-          <Button
-            backgroundColor="#F7BB65"
-            textColor="#000"
-            fontSize={14}
-            pillShape
-          >
-            Report
-          </Button>
-        </div>
+  <Button
+    backgroundColor="#F7BB65"
+    textColor="#000"
+    fontSize={14}
+    pillShape
+    onClick={() => {
+      setShowReportPopup(true);
+
+      setTimeout(() => {
+        setShowReportPopup(false);
+      }, 2000);
+    }}
+  >
+    Report
+  </Button>
+{showReportPopup && (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "rgba(0,0,0,0.5)",
+      zIndex: 1000,
+    }}
+  >
+    <div
+      style={{
+        backgroundColor: "#ffffff",
+        border: "2px solid #DA291C",
+        color: "black",
+        padding: "20px 30px",
+        borderRadius: "12px",
+        maxWidth: "400px",
+        fontSize: "18px",
+      }}
+    >
+      Awww did someone's feelings get hurt? Don't worry, we have a team of highly trained monkeys ready to investigate any bad behavior on the platform. We take reports seriously and will ban anyone found breaking the rules. In the meantime, why not grab a snack and relax? Our monkeys are on the case! 🐒
+    </div>
+  </div>
+)}
+</div>
       </div>
 
       {voteError && <p style={{ color: "#DA291C" }}>{voteError}</p>}
