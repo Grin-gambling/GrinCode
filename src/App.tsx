@@ -7,6 +7,7 @@ import Leaderboard from "./Leaderboard";
 import Currency from "./Currency";
 import Login from "./Login";
 import Register from "./Registration";
+import TopBets from "./TopBets";
 
 type BetPost = {
   id: string;
@@ -64,6 +65,15 @@ type LeaderboardUser = {
   id: string;
   username: string;
   balance: number | string;
+};
+
+const pillShape = true;
+
+const cardStyle = {
+  border: "4px solid #DA291C",
+  padding: "15px",
+  backgroundColor: "white",
+  borderRadius: pillShape ? "40px" : "8px",
 };
 
 const AUTH_TOKEN_STORAGE_KEY = "grincodeAuthToken";
@@ -679,25 +689,30 @@ export default function App(): JSX.Element {
               ))}
             </div>
 
-            <div
-              style={{
-                width: "250px",
-                border: "4px solid #DA291C",
-                padding: "15px",
-                borderRadius: "8px",
-                marginLeft: "10px",
-                marginTop: "20px",
-                marginRight: "20px",
-              }}
-            >
-              <Leaderboard
-                players={leaderboardUsers.map((user) => ({
-                  id: user.id,
-                  username: user.username,
-                  acorns: Number(user.balance),
-                }))}
-              />
-            </div>
+<div
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: "15px",
+    alignItems: "flex-start",
+    paddingTop: "30px",
+    paddingRight: "30px",
+  }}
+>
+  <div style={cardStyle}>
+    <Leaderboard
+      players={leaderboardUsers.map((user) => ({
+        id: user.id,
+        username: user.username,
+        acorns: Number(user.balance),
+      }))}
+    />
+  </div>
+
+  <div style={cardStyle}>
+    <TopBets posts={posts} />
+  </div>
+</div>
           </div>
         </div>
       ) : (
