@@ -34,29 +34,25 @@ type PostProps = {
   startAllTimers: boolean;
 };
 
+// Helper function to format time remaining until market closes
 function formatTimeRemaining(milliseconds: number) {
-  if (milliseconds <= 0) {
-    return "Closed";
-  }
-
   const totalSeconds = Math.floor(milliseconds / 1000);
   const days = Math.floor(totalSeconds / 86400);
   const hours = Math.floor((totalSeconds % 86400) / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
-
+  if (milliseconds <= 0) {
+    return "Closed";
+  }
   if (days > 0) {
     return `${days}d ${hours}h ${minutes}m`;
   }
-
   if (hours > 0) {
     return `${hours}h ${minutes}m ${seconds}s`;
   }
-
   if (minutes > 0) {
     return `${minutes}m ${seconds}s`;
   }
-
   return `${seconds}s`;
 }
 
@@ -89,12 +85,8 @@ export default function Post({
 }: PostProps) {
   const [showComments, setShowComments] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
-  const [hasEnded, setHasEnded] = useState(
-    new Date(closesAt).getTime() <= Date.now()
-  );
-  const [timeLeftMs, setTimeLeftMs] = useState(() =>
-    Math.max(new Date(closesAt).getTime() - Date.now(), 0)
-  );
+  const [hasEnded, setHasEnded] = useState(new Date(closesAt).getTime() <= Date.now());
+  const [timeLeftMs, setTimeLeftMs] = useState(() => Math.max(new Date(closesAt).getTime() - Date.now(), 0));
   const [showModal, setShowModal] = useState(false);
   const [selectedSide, setSelectedSide] = useState<"yes" | "no" | null>(null);
   const [wagerAmount, setWagerAmount] = useState<number | "">("");
@@ -124,28 +116,22 @@ export default function Post({
     if (!startAllTimers) {
       return;
     }
-
     const updateTimeLeft = () => {
       const nextTimeLeft = Math.max(new Date(closesAt).getTime() - Date.now(), 0);
       setTimeLeftMs(nextTimeLeft);
-
       if (nextTimeLeft <= 0) {
         setHasEnded((currentValue) => {
           if (!currentValue) {
             setShowPopup(true);
           }
-
           return true;
         });
       }
     };
-
     updateTimeLeft();
-
     if (new Date(closesAt).getTime() <= Date.now()) {
       return;
     }
-
     const interval = setInterval(updateTimeLeft, 1000);
     return () => clearInterval(interval);
   }, [startAllTimers, closesAt]);
@@ -154,16 +140,12 @@ export default function Post({
     if (!showComments || hasLoadedComments) {
       return;
     }
-
     let isActive = true;
-
     const fetchComments = async () => {
       setCommentError("");
       setIsLoadingComments(true);
-
       try {
         const loadedComments = await onLoadComments(marketId);
-
         if (isActive) {
           setComments(loadedComments);
           setHasLoadedComments(true);
@@ -180,9 +162,7 @@ export default function Post({
         }
       }
     };
-
     void fetchComments();
-
     return () => {
       isActive = false;
     };
@@ -194,7 +174,6 @@ export default function Post({
       : selectedSide === "no"
         ? rightLabel
         : "";
-
   const yesTotal = leftTotal;
   const noTotal = rightTotal;
   const total = yesTotal + noTotal;
@@ -207,7 +186,6 @@ export default function Post({
       : winningOutcomeId === rightOutcomeId
         ? rightLabel
         : null;
-
   const styles = {
     card: {
       border: "4px solid #DA291C",

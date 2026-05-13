@@ -1,5 +1,7 @@
 
 
+
+
 type Player = {
   id: string;
   username: string;
@@ -32,6 +34,7 @@ const styles: Record<string, React.CSSProperties> = {
     width: "250px",
     padding: "0px",
     fontFamily: "Futura, sans-serif",
+    marginTop: "20px",
   },
   // Formatting for the title of the leaderboard
   title: {
