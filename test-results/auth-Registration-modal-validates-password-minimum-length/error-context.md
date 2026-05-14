@@ -146,7 +146,7 @@ Call log:
       - generic [ref=e137]:
         - generic [ref=e138]:
           - heading "1" [level=3] [ref=e139]
-          - generic [ref=e141]: "Time remaining: 150d 13h 39m"
+          - generic [ref=e141]: "Time remaining: 151d 4h 14m"
         - paragraph [ref=e142]: "2"
         - generic [ref=e143]:
           - generic [ref=e144]: "3: 50.0%"
