@@ -287,8 +287,24 @@ export default function App(): JSX.Element {
   };
 
   useEffect(() => {
-    void refreshAppData();
-  }, []);
+  void refreshAppData();
+}, []);
+
+  useEffect(() => {
+  const handleEscape = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      setShowCreateModal(false);
+      setShowLoginModal(false);
+      setShowRegisterModal(false);
+    }
+  };
+
+  window.addEventListener("keydown", handleEscape);
+
+  return () => {
+    window.removeEventListener("keydown", handleEscape);
+  };
+}, []);
 
   useEffect(() => {
     if (!authToken) {
@@ -584,15 +600,19 @@ export default function App(): JSX.Element {
   };
 
   return (
-    <div>
-      <div className="banner">
-        <img src={banner} alt="Website Banner" />
-        <h1>G R I N G A M B L I N G</h1>
+    <main aria-label="Grin Gambling application">
+      <header className="banner" role="banner">
+        <img src={banner} alt="Grin Gambling Website Banner" />
+        <h1 aria-label="Grin Gambling">G R I N G A M B L I N G </h1>
         <Currency acorns={currentAcorns} />
-      </div>
+      </header>
+      <p className="sr-only" aria-live="polite">
+        Current acorn balance: {currentAcorns}
+      </p>
 
-      <div className="button-area">
-        <Button
+      <nav className="button-area" aria-label="Primary navigation">
+        <Button aria-label="Switch to market view"
+          aria-pressed={activeView === "markets"}
           backgroundColor={activeView === "markets" ? "#DA291C" : "#F7BB65"}
           textColor={activeView === "markets" ? "#ffffff" : "#000000"}
           fontSize={fontSize}
@@ -602,7 +622,8 @@ export default function App(): JSX.Element {
           Market
         </Button>
 
-        <Button
+        <Button aria-label="Switch to minigames view"
+          aria-pressed={activeView === "minigames"}
           backgroundColor={activeView === "minigames" ? "#DA291C" : "#F7BB65"}
           textColor={activeView === "minigames" ? "#ffffff" : "#000000"}
           fontSize={fontSize}
@@ -613,7 +634,7 @@ export default function App(): JSX.Element {
         </Button>
 
         {activeView === "markets" && (
-          <Button
+          <Button aria-label="Create new betting market"
             backgroundColor={backgroundColor}
             textColor={textcolor}
             fontSize={fontSize}
@@ -624,7 +645,11 @@ export default function App(): JSX.Element {
           </Button>
         )}
 
-        <Button
+        <Button aria-label={
+          currentLoggedInUser
+          ? `Log out ${currentLoggedInUser.username}`
+          : "Open login modal"
+          }
           backgroundColor={backgroundColor}
           textColor={textcolor}
           fontSize={fontSize}
@@ -640,7 +665,7 @@ export default function App(): JSX.Element {
           {currentLoggedInUser ? `Log Out (${currentLoggedInUser.username})` : "Login"}
         </Button>
 
-        <Button
+        <Button aria-label="Sign Up"
           backgroundColor={backgroundColor}
           textColor={textcolor}
           fontSize={fontSize}
@@ -649,15 +674,23 @@ export default function App(): JSX.Element {
         >
           Sign up
         </Button>
-      </div>
+      </nav>
 
-      {errorMessage && <p>{errorMessage}</p>}
-      {isLoading && activeView === "markets" && <p>Loading markets...</p>}
+      {errorMessage && (
+        <p role="alert" aria-live="assertive">
+        {errorMessage}
+        </p>
+      )}
+      {isLoading && activeView === "markets" && (
+        <p aria-live="polite">
+        Loading markets...
+        </p>
+      )}
 
       {activeView === "markets" ? (
         <div>
           <div style={{ display: "flex" }}>
-            <div style={{ flex: 1 }}>
+            <section style={{ flex: 1 }} aria-label="Betting markets">
               {posts.map((post) => (
                 <Post
                   key={post.id}
@@ -687,7 +720,7 @@ export default function App(): JSX.Element {
                   startAllTimers={startAllTimers}
                 />
               ))}
-            </div>
+            </section>
 
 <div
   style={{
@@ -699,7 +732,7 @@ export default function App(): JSX.Element {
     paddingRight: "30px",
   }}
 >
-  <div style={cardStyle}>
+  <aside style={cardStyle} aria-label="Leaderboard">
     <Leaderboard
       players={leaderboardUsers.map((user) => ({
         id: user.id,
@@ -707,11 +740,11 @@ export default function App(): JSX.Element {
         acorns: Number(user.balance),
       }))}
     />
-  </div>
+  </aside>
 
-  <div style={cardStyle}>
+  <aside style={cardStyle} aria-label="Top Bets">
     <TopBets posts={posts} />
-  </div>
+  </aside>
 </div>
           </div>
         </div>
@@ -728,6 +761,8 @@ export default function App(): JSX.Element {
             key={currentLoggedInUser?.id ?? "guest"}
             className="minigame-frame"
             src={minigameSrc}
+            aria-label="Grin Gamblers minigames"
+            tabIndex={0}
             title="Grin Gamblers Minigames"
             onLoad={() => {
               const frameWindow = minigameFrameRef.current?.contentWindow;
@@ -765,6 +800,9 @@ export default function App(): JSX.Element {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-bet-title"
             onClick={(e) => e.stopPropagation()}
             style={{
               background: "white",
@@ -776,41 +814,54 @@ export default function App(): JSX.Element {
               gap: "10px",
             }}
           >
-            <h2 style={{ margin: 0 }}>Create Bet</h2>
+            <h2
+              id="create-bet-title"
+              style={{ margin: 0 }}>
+            Create Bet
+            </h2>
 
+            <label htmlFor="bet-title">Bet title</label>
             <input
+              id="bet-title"
               type="text"
-              placeholder="Bet title"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               style={{ padding: "8px" }}
             />
 
+            <label htmlFor="bet-description">Bet description</label>
             <input
+              id="bet-description"
               type="text"
-              placeholder="Bet description"
               value={newContent}
               onChange={(e) => setNewContent(e.target.value)}
               style={{ padding: "8px" }}
             />
 
+            <label htmlFor="left-option">Left option</label>
             <input
+              id="left-option"
               type="text"
-              placeholder="Left option"
               value={newLeft}
               onChange={(e) => setNewLeft(e.target.value)}
               style={{ padding: "8px" }}
             />
 
+            <label htmlFor="right-option">Right option</label>
             <input
+              id="right-option"
               type="text"
-              placeholder="Right option"
               value={newRight}
               onChange={(e) => setNewRight(e.target.value)}
               style={{ padding: "8px" }}
             />
 
+            <label htmlFor="bet-close-time">
+              Closing date and time
+            </label>
+
             <input
+              id="bet-close-time"
               type="datetime-local"
               value={newCloseTime}
               onChange={(e) => setNewCloseTime(e.target.value)}
@@ -846,13 +897,24 @@ export default function App(): JSX.Element {
             zIndex: 1000,
           }}
         >
-          <div onClick={(e) => e.stopPropagation()}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="login-modal-title"
+            onClick={(e) => e.stopPropagation()}>
+            <h2
+              id="login-modal-title"
+              style={{ margin: 0 }}>
+              Login
+            </h2>
+
             <Login
               backgroundColor="white"
               textColor={textcolor}
               fontSize={fontSize}
               isOpen={showLoginModal}
               onClose={() => setShowLoginModal(false)}
+              autoFocus
               onLoginSuccess={(token, user) => {
                 localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
                 setAuthToken(token);
@@ -881,24 +943,35 @@ export default function App(): JSX.Element {
             zIndex: 1000,
           }}
         >
-          <div onClick={(e) => e.stopPropagation()}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="register-modal-title"
+            onClick={(e) => e.stopPropagation()}>
+            <h2
+              id="register-modal-title"
+              style={{ margin: 0 }}>
+              Register
+            </h2>
+
             <Register
               backgroundColor="white"
               textColor={textcolor}
               fontSize={fontSize}
               isOpen={showRegisterModal}
               onClose={() => setShowRegisterModal(false)}
+              autoFocus
               onRegisterSuccess={(token, user) => {
                 localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
                 setAuthToken(token);
                 setCurrentLoggedInUser(user);
                 setShowRegisterModal(false);
                 void refreshAppData();
-              }}
+              }}  
             />
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }

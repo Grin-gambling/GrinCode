@@ -17,6 +17,7 @@ type AuthUser = {
 };
 
 type LoginProps = {
+  autoFocus?: boolean;
   isOpen: boolean;
   onClose: () => void;
   backgroundColor: string;
@@ -26,6 +27,7 @@ type LoginProps = {
 };
 
 function Login({
+  autoFocus,
   isOpen,
   onClose,
   backgroundColor,
@@ -107,6 +109,7 @@ function Login({
         <form className="App" onSubmit={handleSubmit(onSubmit)}>
           <input
             type="email"
+            autoFocus={autoFocus} 
             {...register("email", { required: true })}
             placeholder="Email"
           />

@@ -19,6 +19,7 @@ type AuthUser = {
 
 type RegisterProps = {
   isOpen: boolean;
+  autoFocus?: boolean;
   onClose: () => void;
   backgroundColor: string;
   textColor: string;
@@ -27,6 +28,7 @@ type RegisterProps = {
 };
 
 function Register({
+  autoFocus,
   isOpen,
   onClose,
   backgroundColor,
@@ -109,6 +111,7 @@ function Register({
           <form className="App" onSubmit={handleSubmit(onSubmit)}>
             <input
               type="text"
+              autoFocus={autoFocus} 
               {...register("username", { required: true })}
               placeholder="Username"
             />
