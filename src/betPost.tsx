@@ -100,8 +100,6 @@ export default function Post({
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isSubmittingVote, setIsSubmittingVote] = useState(false);
   const [voteError, setVoteError] = useState("");
-  const [resolutionError, setResolutionError] = useState("");
-  const [isResolving, setIsResolving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [showReportPopup, setShowReportPopup] = useState(false);
 
@@ -418,59 +416,6 @@ export default function Post({
       </div>
 
       {voteError && <p style={{ color: "#DA291C" }}>{voteError}</p>}
-      {resolutionError && <p style={{ color: "#DA291C" }}>{resolutionError}</p>}
-
-      {status === "closed" && (
-        <div style={{ marginTop: "12px", display: "flex", gap: "10px", alignItems: "center" }}>
-          <span style={{ fontWeight: "bold" }}>Resolve market:</span>
-          <Button
-            backgroundColor="#4caf50"
-            textColor="#fff"
-            fontSize={14}
-            onClick={async () => {
-              if (isResolving) return;
-
-              setResolutionError("");
-              setIsResolving(true);
-
-              try {
-                await onResolveMarket(marketId, leftOutcomeId);
-              } catch (error) {
-                setResolutionError(
-                  error instanceof Error ? error.message : "Failed to resolve market"
-                );
-              } finally {
-                setIsResolving(false);
-              }
-            }}
-          >
-            {isResolving ? "Resolving..." : `Resolve ${leftLabel}`}
-          </Button>
-          <Button
-            backgroundColor="#00DBD7"
-            textColor="#000"
-            fontSize={14}
-            onClick={async () => {
-              if (isResolving) return;
-
-              setResolutionError("");
-              setIsResolving(true);
-
-              try {
-                await onResolveMarket(marketId, rightOutcomeId);
-              } catch (error) {
-                setResolutionError(
-                  error instanceof Error ? error.message : "Failed to resolve market"
-                );
-              } finally {
-                setIsResolving(false);
-              }
-            }}
-          >
-            {isResolving ? "Resolving..." : `Resolve ${rightLabel}`}
-          </Button>
-        </div>
-      )}
 
       {status === "resolved" && winningLabel && (
         <p style={{ marginTop: "12px", fontWeight: "bold", color: "#2f7d32" }}>

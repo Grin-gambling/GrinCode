@@ -60,7 +60,7 @@ describe('marketService', () => {
     mockDb.connect.mockResolvedValue(client);
     client.query.mockResolvedValueOnce().mockResolvedValueOnce();
 
-    await expect(createMarket('', 'desc', 'yes', 'no', '2099-01-01T00:00:00.000Z')).rejects.toThrow('Invalid market data');
+    await expect(createMarket('', '', 'desc', 'yes', 'no', '2099-01-01T00:00:00.000Z')).rejects.toThrow('Invalid market data');
     expect(client.query).toHaveBeenNthCalledWith(1, 'BEGIN');
     expect(client.query).toHaveBeenNthCalledWith(2, 'ROLLBACK');
   });
@@ -70,7 +70,7 @@ describe('marketService', () => {
     mockDb.connect.mockResolvedValue(client);
     client.query.mockResolvedValueOnce().mockResolvedValueOnce();
 
-    await expect(createMarket('Q?', 'desc', 'yes', 'no', 'not-a-date')).rejects.toThrow('Invalid close time');
+    await expect(createMarket('user-1', 'Q?', 'desc', 'yes', 'no', 'not-a-date')).rejects.toThrow('Invalid close time');
   });
 
   test('createMarket rejects past close times', async () => {
@@ -78,7 +78,7 @@ describe('marketService', () => {
     mockDb.connect.mockResolvedValue(client);
     client.query.mockResolvedValueOnce().mockResolvedValueOnce();
 
-    await expect(createMarket('Q?', 'desc', 'yes', 'no', '2000-01-01T00:00:00.000Z')).rejects.toThrow('Close time must be in the future');
+    await expect(createMarket('user-1', 'Q?', 'desc', 'yes', 'no', '2000-01-01T00:00:00.000Z')).rejects.toThrow('Close time must be in the future');
   });
 
   test('createMarket creates the market, both outcomes, and commits', async () => {
@@ -88,6 +88,7 @@ describe('marketService', () => {
     mockMarketModel.createMarket.mockResolvedValue({ id: 'market-1', question: 'Q?' });
 
     const result = await createMarket(
+      'user-1',
       'Q?',
       'desc',
       'yes',
@@ -96,6 +97,7 @@ describe('marketService', () => {
     );
 
     expect(mockMarketModel.createMarket).toHaveBeenCalledWith(
+      'user-1',
       'Q?',
       'desc',
       '2099-01-01T00:00:00.000Z',
