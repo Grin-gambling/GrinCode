@@ -174,11 +174,12 @@ app.post('/api/auth/logout', authMiddleware, async (req, res) => {
   }
 });
 
-app.post('/api/markets', async (req, res) => {
+app.post('/api/markets', authMiddleware, async (req, res) => {
   try {
     const { question, description, outcome1, outcome2, closesAt } = req.body;
 
     const market = await createMarket(
+      req.user.id,
       question,
       description,
       outcome1,

@@ -537,6 +537,13 @@ export default function App(): JSX.Element {
   };
 
   const handleCreatePost = async () => {
+    if (!authToken) {
+      setErrorMessage("Please log in to create a bet");
+      setShowLoginModal(true);
+      setShowCreateModal(false);
+      return;
+    }
+
     if (!newTitle || !newContent || !newLeft || !newRight || !newCloseTime) {
       return;
     }
@@ -553,6 +560,7 @@ export default function App(): JSX.Element {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           question: newTitle,
@@ -639,7 +647,16 @@ export default function App(): JSX.Element {
             textColor={textcolor}
             fontSize={fontSize}
             pillShape
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              if (!authToken) {
+                setErrorMessage("Please log in to create a bet");
+                setShowLoginModal(true);
+                return;
+              }
+
+              setErrorMessage("");
+              setShowCreateModal(true);
+            }}
           >
             Create Bet
           </Button>
