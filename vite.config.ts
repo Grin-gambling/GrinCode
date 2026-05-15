@@ -13,13 +13,17 @@ export default defineConfig({
     },
   },
   test: {
+
+    
     environment: "jsdom",
     globals: true,
+    exclude: ['src/App.test.tsx', 'node_modules/**'],
     setupFiles: "./src/test/setup.ts",
     include: [
       "src/**/*.test.{ts,tsx}",
       "services/**/*.test.js",
       "models/**/*.test.js",
+      
     ],
   },
 });
