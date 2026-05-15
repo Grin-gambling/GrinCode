@@ -111,6 +111,22 @@ export default function Post({
   }, [showModal, selectedSide]);
 
   useEffect(() => {
+    if (!showModal && !showPopup) return;
+
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setShowModal(false);
+        setShowPopup(false);
+        setShowReportPopup(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [showModal, showPopup, showReportPopup]);
+
+  useEffect(() => {
     if (!startAllTimers) {
       return;
     }
@@ -231,7 +247,7 @@ export default function Post({
           alignItems: "center",
         }}
       >
-        <h3 style={{ margin: 0 }}>{title}</h3>
+        <h2 style={{ margin: 0 }}>{title}</h2>
 
         <div
           style={{
@@ -258,7 +274,9 @@ export default function Post({
       </div>
 
       <div style={styles.barContainer as React.CSSProperties}>
-        <div
+        <button
+          type="button"
+          aria-label={`Bet on ${leftLabel}`}
           onClick={() => {
             if (marketIsClosed) {
               return;
@@ -275,12 +293,16 @@ export default function Post({
             justifyContent: "center",
             backgroundColor: betBarColor || "#4caf50",
             cursor: marketIsClosed ? "not-allowed" : "pointer",
+            border: "none",
+            padding: 0,
           }}
         >
           {yesPercent > 5 ? `${yesPercent.toFixed(1)}%` : ""}
-        </div>
+        </button>
 
-        <div
+        <button
+          type="button"
+          aria-label={`Bet on ${rightLabel}`}
           onClick={() => {
             if (marketIsClosed) {
               return;
@@ -300,10 +322,12 @@ export default function Post({
             color: "#000",
             transition: "width 0.3s ease",
             cursor: marketIsClosed ? "not-allowed" : "pointer",
+            border: "none",
+            padding: 0,
           }}
         >
           {noPercent > 5 ? `${noPercent.toFixed(1)}%` : ""}
-        </div>
+        </button>
       </div>
 
       <div style={styles.actions}>
@@ -384,6 +408,10 @@ export default function Post({
   </Button>
 {showReportPopup && (
   <div
+    role="dialog"
+    aria-modal="true"
+    aria-label="Report message"
+    tabIndex={-1}
     style={{
       position: "fixed",
       top: 0,
@@ -395,6 +423,7 @@ export default function Post({
       alignItems: "center",
       backgroundColor: "rgba(0,0,0,0.5)",
       zIndex: 1000,
+      pointerEvents: "none",
     }}
   >
     <div
@@ -418,15 +447,19 @@ export default function Post({
       {voteError && <p style={{ color: "#DA291C" }}>{voteError}</p>}
 
       {status === "resolved" && winningLabel && (
-        <p style={{ marginTop: "12px", fontWeight: "bold", color: "#2f7d32" }}>
+        <h3 style={{ marginTop: "12px", fontWeight: "bold", color: "#2f7d32" }}>
           Resolved winner: {winningLabel}
-        </p>
+        </h3>
       )}
 
       {showComments && (
         <div style={styles.comments}>
           <div style={{ display: "flex", gap: "10px", marginBottom: "10px" }}>
+            <label htmlFor={`comment-${marketId}`} className="sr-only">
+              Comment
+            </label>
             <input
+              id={`comment-${marketId}`}
               type="text"
               placeholder="Write a comment..."
               value={newComment}
@@ -486,6 +519,9 @@ export default function Post({
 
       {showModal && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="bet-modal-title"
           onClick={() => setShowModal(false)}
           style={{
             position: "fixed",
@@ -508,6 +544,7 @@ export default function Post({
               width: "300px",
             }}
           >
+          <h1 id="bet-modal-title">Place Bet</h1>
             <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
               <div
                 onClick={() => setSelectedSide("yes")}
@@ -539,7 +576,7 @@ export default function Post({
                     selectedSide === "no" ? "2px solid #00DBD7" : "1px solid #ccc",
                   backgroundColor: selectedSide === "no" ? "#e0f7fa" : "#fff",
                   fontWeight: selectedSide === "no" ? "bold" : "normal",
-                  color: selectedSide === "yes" ? "#000000" : "#000",
+                  color: selectedSide === "no" ? "#000000" : "#000",
                 }}
               >
                 {rightLabel}
@@ -553,21 +590,26 @@ export default function Post({
             )}
 
             {selectedSide && (
-              <input
-                ref={inputRef}
-                type="number"
-                placeholder={`Enter acorns for ${selectedLabel}`}
-                value={wagerAmount}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setWagerAmount(value === "" ? "" : Number(value));
-                }}
-                style={{
-                  width: "100%",
-                  marginTop: "15px",
-                  padding: "5px",
-                }}
-              />
+              <>
+                <label htmlFor="bet-amount">Bet amount</label>
+                <div id="bet-help">Enter acorns for {selectedLabel}</div>
+                <input
+                  id="bet-amount"
+                  ref={inputRef}
+                  type="number"
+                  placeholder={`Enter acorns for ${selectedLabel}`}
+                  value={wagerAmount}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setWagerAmount(value === "" ? "" : Number(value));
+                  }}
+                  style={{
+                    width: "100%",
+                    marginTop: "15px",
+                    padding: "5px",
+                  }}
+                />
+              </>
             )}
 
             <Button
