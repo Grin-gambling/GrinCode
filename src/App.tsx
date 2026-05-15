@@ -190,12 +190,12 @@ export default function App(): JSX.Element {
   const [minigameSrc, setMinigameSrc] = useState("/grin-gamblers.html");
   const minigameFrameRef = useRef<HTMLIFrameElement | null>(null);
 
-  const [compactView, setCompactView] = useState(false);
-
   const backgroundColor = "#DA291C";
   const textcolor = "white";
   const fontSize = 18;
   const currentAcorns = currentLoggedInUser?.balance ?? guestAcorns;
+
+  const [compactView, setCompactView] = useState(false);
 
   const getAuthHeaders = (): Record<string, string> => {
     if (!authToken) {
@@ -539,6 +539,13 @@ export default function App(): JSX.Element {
   };
 
   const handleCreatePost = async () => {
+    if (!authToken) {
+      setErrorMessage("Please log in to create a bet");
+      setShowLoginModal(true);
+      setShowCreateModal(false);
+      return;
+    }
+
     if (!newTitle || !newContent || !newLeft || !newRight || !newCloseTime) {
       return;
     }
@@ -555,6 +562,7 @@ export default function App(): JSX.Element {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           question: newTitle,
@@ -612,12 +620,8 @@ export default function App(): JSX.Element {
         Current acorn balance: {currentAcorns}
       </p>
 
-      
-
-      <nav className="button-area">
-
-
-        <div style={{ marginRight: "auto", paddingLeft: "12px" }}>
+      <nav className="button-area" aria-label="Primary navigation">
+      <div style={{ marginRight: "auto", paddingLeft: "12px" }}>
           <Button
             backgroundColor={backgroundColor}
             textColor={textcolor}
@@ -628,8 +632,6 @@ export default function App(): JSX.Element {
             {compactView ? "Switch to Full Posts" : "Switch to Compact Posts"}
           </Button>
         </div>
-
-
         <Button aria-label="Switch to market view"
           aria-pressed={activeView === "markets"}
           backgroundColor={activeView === "markets" ? "#DA291C" : "#F7BB65"}
@@ -652,14 +654,22 @@ export default function App(): JSX.Element {
           Minigames
         </Button>
 
-
         {activeView === "markets" && (
           <Button aria-label="Create new betting market"
             backgroundColor={backgroundColor}
             textColor={textcolor}
             fontSize={fontSize}
             pillShape
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              if (!authToken) {
+                setErrorMessage("Please log in to create a bet");
+                setShowLoginModal(true);
+                return;
+              }
+
+              setErrorMessage("");
+              setShowCreateModal(true);
+            }}
           >
             Create Bet
           </Button>
@@ -713,7 +723,7 @@ export default function App(): JSX.Element {
             <section style={{ flex: 1 }} aria-label="Betting markets">
               {posts.map((post) => (
                 <BetPostContainer
-                compact={compactView}
+                  compact={compactView}
                   key={post.id}
                   backgroundColor={backgroundColor}
                   textColor={textcolor}
