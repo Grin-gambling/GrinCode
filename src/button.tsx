@@ -1,5 +1,4 @@
 type ButtonProps = {
-    
     backgroundColor: string;
     textColor: string;
     fontSize: number;
@@ -7,13 +6,12 @@ type ButtonProps = {
     children: React.ReactNode;
     width?: string;
     topMargin?: string;
-    
-    // hoverColor?: string;
     type?: "button" | "submit" | "reset";
     onClick?: () => void;
-};
-
-export default function Button({
+    ariaLabel?: string;  // ← add this
+  };
+  
+  export default function Button({
     backgroundColor,
     textColor,
     fontSize,
@@ -21,28 +19,30 @@ export default function Button({
     children,
     width = "auto",
     topMargin,
-    // hoverColor,
     type = "button",
     onClick,
-}: ButtonProps) {
+    ariaLabel,  // ← add this
+  }: ButtonProps) {
     return (
-        <button 
-            onClick={onClick}
-            type={type}
-            style={{
-                marginTop: topMargin,  //remember to use px
-                backgroundColor: backgroundColor,
-                width,
-                color: textColor,
-                fontSize: fontSize,
-                fontFamily: "Futura, sans-serif",
-                borderRadius: pillShape ? "999px" : "4px",
-                padding: "10px 16px",
-                border: "none", // removes blue outline when hovering
-                cursor: "pointer",
-                outline: "none", // removes blue outline when hover
-            }}>
-            {children}
-        </button>
+      <button
+        onClick={onClick}
+        type={type}
+        aria-label={ariaLabel}  // ← add this
+        style={{
+          marginTop: topMargin,
+          backgroundColor: backgroundColor,
+          width,
+          color: textColor,
+          fontSize: fontSize,
+          fontFamily: "Futura, sans-serif",
+          borderRadius: pillShape ? "999px" : "4px",
+          padding: "10px 16px",
+          border: "none",
+          cursor: "pointer",
+          outline: "none",
+        }}
+      >
+        {children}
+      </button>
     );
-}
+  }

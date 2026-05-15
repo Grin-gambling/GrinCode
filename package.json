@@ -3,14 +3,17 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "client": "vite",
-    "server": "node server.js",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
-  },
+"scripts": {
+  "dev": "concurrently \"npm run server\" \"npm run client\"",
+  "client": "vite",
+  "server": "node server.js",
+  "build": "tsc -b && vite build",
+  "lint": "eslint .",
+  "preview": "vite preview",
+  "test": "vitest run",
+  "test:e2e": "playwright test",
+  "test:coverage": "vitest run --coverage"
+},
   "dependencies": {
     "cors": "^2.8.6",
     "express": "^5.2.1",
@@ -42,4 +45,5 @@
     "vite": "^7.3.1",
     "vitest": "^4.1.5"
   }
+  
 }

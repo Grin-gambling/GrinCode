@@ -335,6 +335,7 @@ export default function Post({
           backgroundColor="#ffffff"
           textColor={textColor}
           fontSize={fontSize}
+          ariaLabel="Upvote"
           onClick={async () => {
             if (isSubmittingVote) return;
 
@@ -361,6 +362,7 @@ export default function Post({
           backgroundColor="#ffffff"
           textColor={textColor}
           fontSize={fontSize}
+          ariaLabel="Downvote" 
           onClick={async () => {
             if (isSubmittingVote) return;
 

@@ -68,7 +68,7 @@ describe("Post component", () => {
         name: /show comments/i,
       })
     );
-
+    await user.click(screen.getByRole("button", { name: /upvote/i }));
     expect(
       screen.getByPlaceholderText(/write a comment/i)
     ).toBeInTheDocument();
@@ -154,9 +154,7 @@ describe("Post component", () => {
       />
     );
 
-    const buttons = screen.getAllByRole("button");
-
-    await user.click(buttons[0]);
+    await user.click(screen.getByRole("button", { name: /upvote/i }));
 
     await waitFor(() => {
       expect(onVote).toHaveBeenCalledWith(
@@ -258,9 +256,7 @@ test("shows vote error if voting fails", async () => {
     />
   );
 
-  const buttons = screen.getAllByRole("button");
-
-  await user.click(buttons[0]);
+  await user.click(screen.getByRole("button", { name: /upvote/i }));
 
   await waitFor(() => {
     expect(
