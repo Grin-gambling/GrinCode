@@ -39,7 +39,7 @@ async function createMarket(userId, question, description, closesAt, client = db
     `
       -- Insert the creator, market text, and close time.
       INSERT INTO markets (user_id, question, description, closes_at)
-      -- `$4::timestamptz` tells Postgres to treat the value as a timezone-aware timestamp.
+      -- $4::timestamptz tells Postgres to treat the value as a timezone-aware timestamp.
       VALUES ($1, $2, $3, $4::timestamptz)
       -- Return the saved row in the standard market shape used by the app.
       RETURNING ${MARKET_SELECT_COLUMNS}
