@@ -1,4 +1,5 @@
 type ButtonProps = {
+    
     backgroundColor: string;
     textColor: string;
     fontSize: number;
@@ -8,6 +9,7 @@ type ButtonProps = {
     topMargin?: string;
     
     // hoverColor?: string;
+    type?: "button" | "submit" | "reset";
     onClick?: () => void;
 };
 
@@ -20,24 +22,26 @@ export default function Button({
     width = "auto",
     topMargin,
     // hoverColor,
+    type = "button",
     onClick,
 }: ButtonProps) {
     return (
         <button 
             onClick={onClick}
+            type={type}
             style={{
-            marginTop: topMargin,  //remember to use px
-            backgroundColor: backgroundColor,
-            width,
-            color: textColor,
-            fontSize: fontSize,
-            fontFamily: "Futura, sans-serif",
-            borderRadius: pillShape ? "999px" : "4px",
-            padding: "10px 16px",
-            border: "none", // removes blue outline when hovering
-            cursor: "pointer",
-            outline: "none" // removes blue outline when hover
-        }}>
+                marginTop: topMargin,  //remember to use px
+                backgroundColor: backgroundColor,
+                width,
+                color: textColor,
+                fontSize: fontSize,
+                fontFamily: "Futura, sans-serif",
+                borderRadius: pillShape ? "999px" : "4px",
+                padding: "10px 16px",
+                border: "none", // removes blue outline when hovering
+                cursor: "pointer",
+                outline: "none", // removes blue outline when hover
+            }}>
             {children}
         </button>
     );
