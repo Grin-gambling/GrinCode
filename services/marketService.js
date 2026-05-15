@@ -12,14 +12,14 @@ import { getUserById, updateBalance } from '../models/userModel.js';
  * @param {string} outcome2
  */
 
-async function createMarket(question, description, outcome1, outcome2, closesAt) {    
+async function createMarket(userId, question, description, outcome1, outcome2, closesAt) {    
     const client = await db.connect();
   
     try {
       await client.query('BEGIN');
   
       // Validate inputs
-      if (!question || !description || !outcome1 || !outcome2 || !closesAt) {
+      if (!userId || !question || !description || !outcome1 || !outcome2 || !closesAt) {
         throw new Error('Invalid market data');
       }
 
@@ -35,6 +35,7 @@ async function createMarket(question, description, outcome1, outcome2, closesAt)
   
       // Create market 
       const market = await marketModel.createMarket(
+        userId,
         question,
         description,
         parsedCloseTime.toISOString(),
