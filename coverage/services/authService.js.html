@@ -220,14 +220,10 @@
 <a name='L155'></a><a href='#L155'>155</a>
 <a name='L156'></a><a href='#L156'>156</a>
 <a name='L157'></a><a href='#L157'>157</a>
-<a name='L158'></a><a href='#L158'>158</a>
-<a name='L159'></a><a href='#L159'>159</a>
-<a name='L160'></a><a href='#L160'>160</a>
-<a name='L161'></a><a href='#L161'>161</a>
-<a name='L162'></a><a href='#L162'>162</a>
-<a name='L163'></a><a href='#L163'>163</a>
-<a name='L164'></a><a href='#L164'>164</a>
-<a name='L165'></a><a href='#L165'>165</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L158'></a><a href='#L158'>158</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -267,7 +263,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -316,9 +311,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -343,14 +335,13 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -383,21 +374,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import crypto from 'crypto';
 import db from '../db/db.js';
-import {
-  createUser,
-  getUserByEmail,
-  getUserById,
-} from '../models/userModel.js';
+import { createUser, getUserByEmail, getUserById } from '../models/userModel.js';
+&nbsp;
+// Auth service
+// ------------
+// Flow overview:
+//   register -&gt; validate -&gt; hash password -&gt; create user -&gt; create session
+//   login    -&gt; validate -&gt; verify password -&gt; create session
+//   me       -&gt; resolve session token -&gt; safe user row
 &nbsp;
 function createError(message, statusCode) {
   const error = new Error(message);
@@ -431,7 +420,6 @@ function verifyPassword(password, storedHash) {
 &nbsp;
 async function createSession(userId, client = db) {
   const token = crypto.randomBytes(48).toString('hex');
-&nbsp;
   const result = await client.query(
     `
       INSERT INTO user_sessions (token, user_id)
@@ -478,10 +466,7 @@ async function registerUser(username, email, password) {
 &nbsp;
     await client.query('COMMIT');
 &nbsp;
-    return {
-      token,
-      user,
-    };
+    return { token, user };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -507,14 +492,13 @@ async function loginUser(email, password) {
 &nbsp;
   try {
     await client.query('BEGIN');
+&nbsp;
     const token = await createSession(user.id, client);
     const safeUser = await getUserById(user.id, client);
+&nbsp;
     await client.query('COMMIT');
 &nbsp;
-    return {
-      token,
-      user: safeUser,
-    };
+    return { token, user: safeUser };
   } catch (error) {
 <span class="cstat-no" title="statement not covered" >    await client.query('ROLLBACK');</span>
 <span class="cstat-no" title="statement not covered" >    throw error;</span>
@@ -549,12 +533,7 @@ async function logoutUser(token) {
   await db.query('DELETE FROM user_sessions WHERE token = $1', [token]);
 }
 &nbsp;
-export {
-  getUserBySessionToken,
-  loginUser,
-  logoutUser,
-  registerUser,
-};
+export { getUserBySessionToken, loginUser, logoutUser, registerUser };
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -562,7 +541,7 @@ export {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-05-15T01:07:43.754Z
+                at 2026-05-15T01:18:11.888Z
             </div>
         <script src="../prettify.js"></script>
         <script>
